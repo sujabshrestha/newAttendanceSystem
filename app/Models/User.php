@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Models;
+
+use Candidate\Models\Candidate;
+use Candidate\Models\Leave;
+use Employer\Models\Company;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Passport\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'email_verified_at',
+        'phone',
+        'address',
+        'type'
+
+    ];
+
+
+    public function employerCompany(){
+        return $this->hasOne(Company::class, 'employer_id');
+    }
+
+
+    public function candidateCompany(){
+        return $this->hasOne(Company::class, 'candidate_id');
+    }
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+
+    public function otp(){
+        return $this->hasOne(UserOtp::class, 'user_id');
+    }
+
+    public function leaves(){
+        return $this->hasMany(Leave::class);
+    }
+
+    public function candidate(){
+        return $this->hasOne(Candidate::class, 'user_id');
+    }
+
+
+    public function scopeCandidateCheck($q){
+        return $q->where('type', 'candidate');
+    }
+
+    public function receivedInvitation(){
+        return $this->belongsTo(Invitation::class,'candidate_id','id');
+    }
+
+    public function receivedCompanyInvitation(){
+        $user = Auth::user();
+        return $this->hasMany(Invitation::class,'candidate_id','id')->where('company_id', $user->employerCompany->id);
+    }
+
+
+
+    public function sendInvitation(){
+        return $this->hasMany(Invitation::class,'employer_id','id');
+    }
+
+    public function candidateCompanies(){
+        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id');
+    }
+
+
+
+    public function userCompanies(){
+        return $this->belongsToMany(Company::class,'company_candidates','user_id','company_id')->withPivot('verified_status','status',  'office_hour_start',
+        'office_hour_end',
+        'salary_type',
+        'salary_amount',
+        'duty_time');
+    }
+
+    public function candidateAttendance(){
+        return $this->hasMany(Attendance::class,'candidate_id','id');
+    }
+
+}
