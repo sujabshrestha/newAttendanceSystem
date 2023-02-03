@@ -113,5 +113,14 @@ Route::group([
         });
 
 
+        Route::group([
+            'prefix' => 'report'
+        ], function(){
+            Route::get('today-report','ApiEmployerReportController@all');
+
+
+        });
+
+
     });
 });
