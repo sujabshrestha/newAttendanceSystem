@@ -118,9 +118,14 @@ Route::group([
         ], function(){
             Route::get('today-report','ApiEmployerReportController@all');
 
+            Route::get('weekly-report/{company_id}/{candidate_id}','ApiEmployerReportController@weeklyReport');
 
+            Route::get('monthly-report/{company_id}/{candidate_id}','ApiEmployerReportController@monthlyReport');
+
+            Route::get('yearly-report/{company_id}/{candidate_id}','ApiEmployerReportController@yearlyReport');
+
+            Route::post('payment-submit/{company_id}/{candidate_id}','ApiEmployerReportController@paymentSubmit');
         });
-
 
     });
 });

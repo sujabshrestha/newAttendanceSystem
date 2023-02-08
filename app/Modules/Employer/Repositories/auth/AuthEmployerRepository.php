@@ -168,9 +168,7 @@ class AuthEmployerRepository implements AuthEmployerInterface
         ];
 
         if (!auth()->attempt($data)) {
-
-            throw new Exception('Incorrect Details.
-            Please try again');
+            throw new Exception('Incorrect Details.Please try again');
         }
 
         $token = auth()->user()->createToken('API Token')->accessToken;
