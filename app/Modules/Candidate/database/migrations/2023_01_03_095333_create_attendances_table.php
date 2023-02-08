@@ -19,7 +19,7 @@ class CreateAttendancesTable extends Migration
             $table->unsignedBigInteger('company_id')->nullable();
             $table->unsignedBigInteger('leave_type_id')->nullable();
             $table->unsignedBigInteger('leave_id')->nullable();
-            $table->string('employee_status')->nullable();
+            $table->enum('employee_status', ['Present', 'Absent', 'Leave', 'Late'])->nullable();
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
             $table->unsignedDouble('earning')->nullable();

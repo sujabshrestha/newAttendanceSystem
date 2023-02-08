@@ -16,4 +16,6 @@ interface AuthCandidateInterface
 
     public function login($request);
 
+    public function changePhone($request);
+
 }

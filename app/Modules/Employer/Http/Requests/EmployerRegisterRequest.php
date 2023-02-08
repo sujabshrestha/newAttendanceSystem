@@ -26,8 +26,8 @@ class EmployerRegisterRequest extends FormRequest
     public function rules()
     {
         return [
-        //    'phone' =>[ 'required', new EmployeeCheckRule]
-           'phone' =>[ 'required', Rule::unique('users', 'phone')->where('type','employer')]
+           'phone' => 'required'
+        //    'phone' =>[ 'required', Rule::unique('users', 'phone')->where('type','employer')]
         ];
     }
 }

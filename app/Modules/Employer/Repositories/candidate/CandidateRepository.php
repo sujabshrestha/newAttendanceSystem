@@ -31,11 +31,12 @@ class CandidateRepository implements CandidateInterface {
 
     public function store($request, $id){
 
+
         $company = Company::where('id', $id)->first();
         if($company){
 
             $user = new User();
-            $user->name =$request->firstname;
+            $user->firstname =$request->name;
 
             $user->email =$request->email;
             $user->phone = $request->contact;
@@ -46,28 +47,30 @@ class CandidateRepository implements CandidateInterface {
                 throw new Exception("Something went wrong while creating user");
             }
 
-            $candidate = new Candidate();
-            $candidate->firstname = $request->firstname;
-            $user->lastname =$request->lastname;
-            if($request->code){
-                $candidate->code = $request->code;
-            }else{
-                $candidate->code = Str::random(20);
-            }
-            $candidate->status = 'Active';
-            $candidate->address = $request->address;
-            $candidate->contact = $request->contact;
-            $candidate->email = $request->email;
-            $candidate->dob = $request->dob;
-            $candidate->user_id = $user->id;
-            $candidate->employer_id = auth()->user()->id;
-            if($candidate->save()){
+            $user->assignRole('candidate');
+
+            // $candidate = new Candidate();
+            // $candidate->firstname = $request->firstname;
+            // $user->lastname =$request->lastname;
+            // if($request->code){
+            //     $candidate->code = $request->code;
+            // }else{
+            //     $candidate->code = Str::random(20);
+            // }
+            // $candidate->status = 'Active';
+            // $candidate->address = $request->address;
+            // $candidate->contact = $request->contact;
+            // $candidate->email = $request->email;
+            // $candidate->dob = $request->dob;
+            // $candidate->user_id = $user->id;
+            // $candidate->employer_id = auth()->user()->id;
+            // if($candidate->save()){
 
 
                 $companycandidate = new CompanyCandidate();
                 $companycandidate->company_id = $id;
-                $companycandidate->candidate_id = $candidate->id;
-                $companycandidate->user_id = $user->id;
+                // $companycandidate->candidate_id = $candidate->id;
+                $companycandidate->candidate_id = $user->id;
                 $companycandidate->office_hour_start = $request->office_hour_start;
                 $companycandidate->office_hour_end = $request->office_hour_end;
                 $companycandidate->salary_type = $request->salary_type;
@@ -91,8 +94,8 @@ class CandidateRepository implements CandidateInterface {
                 // Mail::to($user->email)->send($mail);
                 return true;
 
-            }
-            throw new Exception("Something went wrong while storing candidate please try again later");
+            // }
+            // throw new Exception("Something went wrong while storing candidate please try again later");
 
         }
         throw new Exception("Company not found");

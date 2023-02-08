@@ -18,12 +18,10 @@ class CreateCompanyCandidatesTable extends Migration
             $table->unsignedBigInteger('company_id')->nullable();
             $table->unsignedBigInteger('candidate_id')->nullable();
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->foreign('candidate_id')->references('id')->on('candidates')->onDelete('cascade');
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->enum('verified_status', ['verified', 'not_verified'])->defaul('not_verified');
             $table->enum('status', ['Active', 'Inactive'])->defaul('Inactive');
             $table->time('office_hour_start')->nullable();
+            $table->string('code')->unique()->nullable();
             $table->time('office_hour_end')->nullable();
             $table->string('duty_time')->nullable();
             $table->string('salary_amount')->nullable();

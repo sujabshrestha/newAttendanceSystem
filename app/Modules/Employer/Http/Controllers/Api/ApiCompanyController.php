@@ -48,7 +48,7 @@ class ApiCompanyController extends Controller
         try {
 
 
-            $company = Company::where('id', $id)->first();
+            $company = Company::where('id', $id)->where('employer_id', auth()->user()->id)->first();
 
             if($company){
 

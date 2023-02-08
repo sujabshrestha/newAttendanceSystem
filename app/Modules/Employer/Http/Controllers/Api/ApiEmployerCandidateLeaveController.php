@@ -24,10 +24,11 @@ class ApiEmployerCandidateLeaveController extends Controller
 
     }
 
-    public function all(){
+    public function all($companyid = null){
         try{
-            $user = auth()->user();
-            $leaves = Leave::where('company_id', $user->employerCompany->id)->with(['user','LeaveType', 'candidate'])->get();
+
+            $leaves = Leave::where('company_id', $companyid)->with(['candidate','LeaveType'])->get();
+
             $data = [
                 'candidates' =>EmployerCandidateLeaveResource::collection($leaves)
             ];
@@ -44,9 +45,9 @@ class ApiEmployerCandidateLeaveController extends Controller
     public function leaveDetail($id){
         try{
             $user = auth()->user();
-            $leave = Leave::where('id', $id)->with(['user','LeaveType', 'candidate'])->first();
+            $leave = Leave::where('id', $id)->with(['candidate','LeaveType'])->first();
             $data = [
-                'candidate' => new EmployerCandidateLeaveDetailsResource($leave)
+                'leavedetail' => new EmployerCandidateLeaveDetailsResource($leave)
             ];
             return $this->response->responseSuccess($data, "Succcess", 200);
         }catch(\Exception $e){
@@ -66,20 +67,14 @@ class ApiEmployerCandidateLeaveController extends Controller
 
     public function leaveApproval($id){
         try{
-            $leave = Leave::where('id', $id)->with(['candidate', 'user', 'company', 'leaveType'])->first();
+            $leave = Leave::where('id', $id)->with(['candidate', 'company', 'leaveType'])->first();
             // $startDate = Carbon::createFromFormat('Y-m-d', $leave->start_date);
             // $endDate = Carbon::createFromFormat('Y-m-d', $leave->end_date);
             // dd($startDate, $endDate);
-
-
             if($leave){
                 $leave->approved = 1;
                 if($leave->update() == true){
                     $dateRange = $this->getDatesFromRange($leave->start_date, $leave->end_date);
-
-
-
-
 
                     foreach($dateRange as $date){
 

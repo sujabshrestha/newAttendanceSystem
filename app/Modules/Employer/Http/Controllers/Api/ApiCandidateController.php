@@ -23,6 +23,7 @@ class ApiCandidateController extends Controller
     {
         $this->response = $response;
         $this->candidate = $candidate;
+
     }
 
     public function store(CandidateStoreRequest $request, $id)
@@ -55,14 +56,22 @@ class ApiCandidateController extends Controller
     public function getCandidatesByCompany($id)
     {
         try {
+            // dd("fkldsahjkfds");
 
-            $candidates = Candidate::with(['companies' =>  function ($q) use ($id) {
+            $company = Company::where('id', $id)->with(['candidatesByCompanyID'])->whereHas('candidatesByCompanyID', function($q)use($id){
                 $q->where('company_id', $id);
-            }, 'user', 'employer'])->get();
+            })->first();
 
-            if ($candidates) {
+            // dd($company);
+            // $candidates = User::with(['companyCandidate'])->whereHas('companyCandidate',  function ($q) use ($id) {
+            //     $q->where('company_id', $id);
+            // })->get();
+
+            // dd($company);
+            // dd($candidates);
+            if ($company->candidatesByCompanyID->isNotEmpty()) {
                 $data = [
-                    'candidate' => CandidateResource::collection($candidates)
+                    'candidate' => CandidateResource::collection($company->candidatesByCompanyID)
                 ];
                 return $this->response->responseSuccess($data, "Successfully Created", 200);
             }

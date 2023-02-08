@@ -52,10 +52,13 @@ class ApiCandidateInvitationController extends Controller
     public function updateCandidateInvitation(Request $request,$invitation_id){
         try{
 
+
             $user = auth()->user();
             // $leave = Leave::where('user_id',$user->id)->where('company_id',$company_id)->where('id',$id);
             $invitation = Invitation::where('id',$invitation_id)->where('candidate_id',$user->id)->first();
+
             if($invitation){
+
                 if($invitation->status == "Not-Approved"){
                     $invitation->status =$request->status;
 
@@ -63,9 +66,10 @@ class ApiCandidateInvitationController extends Controller
                         $company = Company::where('id', $invitation->company_id)->first();
                         $companycandidate  = new CompanyCandidate();
                         $companycandidate->status = 'Active';
-                        $companycandidate->verified_status = 'not_verified';
-                        $companycandidate->candidate_id = $user->candidate->id;
-                        $companycandidate->user_id = $user->id;
+                        $companycandidate->verified_status = 'verified';
+                        $companycandidate->candidate_id = $user->id;
+                        $companycandidate->company_id = $company->id;
+                        // $companycandidate->user_id = $user->id;
                         $companycandidate->office_hour_start = $company->office_hour_start;
                         $companycandidate->office_hour_end = $company->office_hour_end;
                         $companycandidate->save();

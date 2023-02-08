@@ -35,7 +35,7 @@ class CandidateStoreRequest extends FormRequest
             'salary_type' => 'required',
             'duty_time' => 'required',
             'dob' => 'required',
-            'code' => 'unique:candidates,code',
+            // 'code' => 'unique:users,code',
             'salary_amount' => 'required',
             'joining_date' => 'required',
 

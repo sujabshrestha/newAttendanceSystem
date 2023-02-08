@@ -32,7 +32,7 @@ class AuthCandidateRepository implements AuthCandidateInterface
         $args = array(
             'apikey' => 'diwZp392vfj329fff3@zzvcne2308fE3f29fhnd249',
             'from'  => 'InfoAlert',
-            'contacts'  => [$phone] ,
+            'contacts'  => [$phone],
             "message_type" => "plain",
             'message'  => $message,
             "sender_id" => [
@@ -66,7 +66,6 @@ class AuthCandidateRepository implements AuthCandidateInterface
         if ($status_code == 200) {
             $response = json_decode($response);
             return $response;
-
         } else {
             throw new Exception('Error While Send OTP Via Sms.');
         }
@@ -76,39 +75,63 @@ class AuthCandidateRepository implements AuthCandidateInterface
 
     public function register($request)
     {
+        $user = User::where('phone', $request->phone)
+            ->where('type', 'candidate')
+            ->first();
+        if (!$user) {
 
-        $user = User::create([
-            'phone' => $request->phone,
-            'password' => bcrypt($request->phone),
-            'type' => 'candidate',
-        ]);
-
-
-        if ($user) {
-            $user->assignRole('candidate');
-
-            $user->otp()->create([
-                'otp' => rand(0000,9999)
+            $user = User::create([
+                'phone' => $request->phone,
+                'password' => bcrypt($request->phone),
+                'type' => 'candidate',
             ]);
 
 
-            $candidate = new Candidate();
-            $candidate->code = 'C-' . Str::random(20);
-            $candidate->contact = $request->phone;
-            $candidate->user_id = $user->id;
-            if ($candidate->save()) {
+            if ($user) {
+                $user->assignRole('candidate');
+
+                $user->otp()->create([
+                    'otp' => rand(0000, 9999)
+                ]);
+
                 $message= "Please verify using otp: ".$user->otp->otp;
                 $sendSms =  $this->sendSms($user->phone, $message);
                 if($sendSms){
-                    return [
-                        'otp' => $user->otp->otp
-                    ];
+                return [
+                    'otp' => $user->otp->otp
+                ];
                 }
+
             }
-            throw new Exception("Something went wrong");
+            throw new Exception("Something went wrong while creating candidate");
         }
 
-        throw new Exception("Something went wrong while creating candidate");
+        $token =  $user->createToken('API Token')->accessToken;
+
+        if (!empty($user->otp)) {
+            $otp = $user->otp->otp;
+        } else {
+
+            $user->otp()->create([
+                'otp' => rand(0000, 9999)
+            ]);
+            $otp = $user->otp->otp;
+        }
+
+        $message = "Please verify using otp: " . $otp;
+        $sendSms =  $this->sendSms($user->phone, $message);
+        if ($sendSms) {
+
+
+
+        return [
+            'otp' => $otp,
+            'token' => $token
+        ];
+        }
+
+
+
     }
 
 
@@ -185,5 +208,48 @@ class AuthCandidateRepository implements AuthCandidateInterface
             'user' => auth()->user(),
             'token' => $token
         ];
+    }
+
+
+
+
+    public function changePhone($request)
+    {
+
+        // dd($request->all());
+        $user = User::where('id', auth()->user()->id)->first();
+        if ($user) {
+
+            $otherUsers = User::where('id', '!=', $user->id)
+                ->where('type', 'candidate')
+                ->where('phone', $request->old_phone)->exists();
+            // dd($user);
+
+            if ($otherUsers == true) {
+                throw new Exception("Phone number already exists");
+            } else {
+
+                $user->phone = $request->new_phone;
+                if ($user->update() == true) {
+                    $otp = $user->otp->updateOrCreate([
+                        'user_id' => $user->id
+                    ], [
+                        'otp' => rand(0000, 9999)
+                    ]);
+
+                    $message = "Please verify using otp: " . $otp;
+                    $sendSms =  $this->sendSms($user->phone, $message);
+                    if ($sendSms) {
+
+
+
+                        return [
+                            'otp' => $otp,
+                            // 'token' => $token
+                        ];
+                    }
+                }
+            }
+        }
     }
 }

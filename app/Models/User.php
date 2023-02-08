@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Candidate\Models\Candidate;
+use Candidate\Models\CompanyCandidate;
 use Candidate\Models\Leave;
 use Employer\Models\Company;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -42,6 +43,12 @@ class User extends Authenticatable
     public function candidateCompany(){
         return $this->hasOne(Company::class, 'candidate_id');
     }
+
+
+    public function companyCandidate(){
+        return $this->hasMany(CompanyCandidate::class, 'candidate_id');
+    }
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -107,6 +114,16 @@ class User extends Authenticatable
         'salary_type',
         'salary_amount',
         'duty_time');
+    }
+
+
+    public function companiesByCandidateID(){
+        $user = auth()->user();
+        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id')->withPivot('verified_status','status',  'office_hour_start',
+        'office_hour_end',
+        'salary_type',
+        'salary_amount',
+        'duty_time')->where('candidate_id', '=', $user->id);
     }
 
     public function candidateAttendance(){

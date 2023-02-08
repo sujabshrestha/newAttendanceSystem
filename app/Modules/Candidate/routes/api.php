@@ -79,6 +79,11 @@ Route::group([
 
 
 
+        Route::post('change-phonenumber', 'ApiCandidateAuthController@changePhone')->name('changePhone');
+
+
+
+
 
 
     });

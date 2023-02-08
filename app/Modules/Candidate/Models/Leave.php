@@ -44,17 +44,17 @@ class Leave extends Model
     }
 
 
-    public function user(){
-        return $this->belongsTo(User::class,'user_id');
-    }
-
-
     public function candidate(){
-        return $this->belongsTo(Candidate::class,'candidate_id');
+        return $this->belongsTo(User::class,'candidate_id');
     }
 
     public function company(){
         return $this->belongsTo(Company::class, 'company_id');
     }
+
+
+
+
+
 
 }
