@@ -18,6 +18,7 @@ class EmployerCandidateLeaveDetailsResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'candidate_id' => $this->candidate->id ?? "",
             'remarks' => $this->remarks,
             'leave_type' => new LeavetypeResource($this->whenLoaded('LeaveType')),
             'start_date' => Carbon::parse($this->start_date),

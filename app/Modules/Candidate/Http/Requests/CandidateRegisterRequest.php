@@ -25,7 +25,8 @@ class CandidateRegisterRequest extends FormRequest
     public function rules()
     {
         return [
-          'phone' =>[ 'required', Rule::unique('users', 'phone')->where('type','candidate')]
+            'phone' => 'required'
+        //   'phone' =>[ 'required', Rule::unique('users', 'phone')->where('type','candidate')]
         ];
     }
 }

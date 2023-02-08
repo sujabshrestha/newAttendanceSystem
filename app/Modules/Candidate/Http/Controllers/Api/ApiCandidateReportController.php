@@ -28,42 +28,119 @@ class ApiCandidateReportController extends Controller
     {
         try {
 
+            $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+            $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+            $attendanceData = DB::table('attendances')
+                ->join('company_specialleaves', function ($join) use ($weekStart, $weekEnd) {
+                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
+                        ->whereBetween('company_specialleaves.leave_date', [$weekStart, $weekEnd]);
+                })
+                ->join('company_governmentleaves', function ($join) use ($weekStart, $weekEnd) {
+                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
+                        ->whereBetween('company_governmentleaves.leave_date', [$weekStart, $weekEnd]);
+                })
+                ->join('company_businessleaves', function ($join) {
+                    $join->on('attendances.company_id', '=', 'company_businessleaves.company_id');
+                })
 
-            $company = Company::where('id', $companyid)->with(['govLeaves', 'specialLeaves', 'businessLeaves'])->withCount(['govLeaves' => function ($q) {
-                $q->whereBetween(
-                    'leave_date',
-                    [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
-                );
-            }])->withCount(['specialLeaves' => function ($q) {
-                $q->whereBetween(
-                    'leave_date',
-                    [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
-                );
-            }])->first();
+                ->where('attendances.candidate_id', '=', auth()->user()->id)
+                ->where('attendances.company_id', '=', $companyid)
+
+                ->select(
+                    DB::raw("Date(attendances.created_at) as attendance_day"),
+                    'attendances.employee_status',
+                    DB::raw("Date(company_specialleaves.leave_date) as special_date"),
+                    DB::raw("Date(company_governmentleaves.leave_date) as goverment_date"),
+                    DB::raw("(company_businessleaves.business_leave_id - 1) as business_date")
+                )
+                ->get();
+            // dd($attendanceData);
+            $reportData = [];
+            for ($i = 0; $i <= 6; $i++) {
+                $day = $weekStart->copy()->addDays($i);
+                // dd($day);
+
+                $reportData[$day->format('Y-m-d')] = 'Absent';
+                foreach ($attendanceData as $data) {
+                    // dd($day->format('w'));
+                    // dd($data->business_date);
+                    if ($day->format('Y-m-d') == $data->attendance_day) {
+                        $reportData[$day->format('Y-m-d')] = $data->employee_status;
+                    } elseif ($day->format('Y-m-d') == $data->special_date) {
+                        $reportData[$day->format('Y-m-d')] = 'Special Holiday';
+                    } elseif ($day->format('Y-m-d') == $data->goverment_date) {
+                        $reportData[$day->format('Y-m-d')] = 'Government Holiday';
+                    }
+
+                    elseif ($day->format('w') == $data->business_date) {
+                        // dd('sadsad');
+
+                        $reportData[$day->format('Y-m-d')] = 'Business Holiday';
+                    }
+
+                }
+            }
+
+            dd($reportData);
+
+
+
+
+
+            $company = Company::where('id', $companyid)->with(['govLeaves', 'specialLeaves', 'businessLeaves'])
+                ->withCount(['govLeaves' => function ($q) {
+                    $q->whereBetween(
+                        'leave_date',
+                        [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
+                    );
+                }])->withCount(['specialLeaves' => function ($q) {
+                    $q->whereBetween(
+                        'leave_date',
+                        [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
+                    );
+                }])->first();
 
 
             $user = auth()->user();
-            $presentCount = Attendance::where('candidate_id', $user->id)
+            $present = Attendance::where('candidate_id', $user->id)
                 ->where('company_id', $companyid)->whereBetween(
                     'created_at',
                     [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
                 )
-                ->where('employee_status', 'Present')
-                ->count();
+                ->where('employee_status', 'Present')->orWhere('employee_status', 'late')
+                ->get();
 
-            // dd(Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek());
-            $leaveCount = Attendance::where('candidate_id', $user->id)
+            $presentCount = $present->count();
+
+            $leave = Attendance::where('candidate_id', $user->id)
                 ->where('company_id', $companyid)->whereBetween(
                     'created_at',
                     [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
                 )
                 ->where('employee_status', 'Leave')
-                ->count();
-            // dd($leaveCount);
+                ->get();
+
+
+            $leaveCount = $leave->count();
+            $dateExceptAbsent = $present->merge($leave);
+
+            $start_date = Carbon::now()->startOfWeek();
+            $end_date = Carbon::now()->endOfWeek();
+            $alldaysofweek = [];
+            if (($start_date || $start_date != null) || $end_date) {
+                for ($date = $start_date->copy(); $date->lte($end_date); $date->addDay(1)) {
+                    $day =  $date->format('Y-m-d');
+                    $alldaysofweek[$day] = $present->where('created_at', $day);
+                }
+            }
+
+
+            dd($alldaysofweek);
+
 
 
             $businessleavedays = $company->businessLeaves->pluck('title') ?? [];
-            // dd($businessleavedays);
+
 
             $startDate = Carbon::parse(Carbon::now()->startOfWeek());
 
@@ -97,6 +174,8 @@ class ApiCandidateReportController extends Controller
                 }
                 return $newdate;
             }, $endDate);
+            // dd("jflkdsjlkfds")
+            // dd($businessleavedays);
 
 
             $absentcount = 6 - $presentCount - $leaveCount;
@@ -117,9 +196,11 @@ class ApiCandidateReportController extends Controller
                 ->where('company_id', $companyid)->whereBetween(
                     'created_at',
                     [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
-                )->get()->groupBy(function ($date) {
+                )->where('employee_status', 'Present')->orWhere('employee_status', 'late')->get()->groupBy(function ($date) {
                     return Carbon::parse($date->created_at)->format('D');
                 });
+
+            dd($weekdata);
 
 
             // $data =  DB::table('leaves')
@@ -287,15 +368,15 @@ class ApiCandidateReportController extends Controller
             //     ->get();
 
 
-             $yearlydata = Attendance::where('company_id', $companyid)->whereYear('created_at', $year)->select(DB::raw('sum(earning) as `total_earning`'),DB::raw('YEAR(created_at) year, MONTH(created_at) month'))
+            $yearlydata = Attendance::where('company_id', $companyid)->whereYear('created_at', $year)->select(DB::raw('sum(earning) as `total_earning`'), DB::raw('YEAR(created_at) year, MONTH(created_at) month'))
 
-             ->groupby('year','month')
-             ->get();
+                ->groupby('year', 'month')
+                ->get();
 
-             $data = [
+            $data = [
                 'data' => CandidateYearlyResource::collection($yearlydata)
-             ];
-             return $this->response->responseSuccess($data, "Success", 200);
+            ];
+            return $this->response->responseSuccess($data, "Success", 200);
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }

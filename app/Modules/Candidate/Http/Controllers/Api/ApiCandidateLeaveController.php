@@ -58,11 +58,10 @@ class ApiCandidateLeaveController extends Controller
 
     public function storeCandidateLeave(Request $request, $company_id){
         try{
-  
+
             $user = auth()->user();
             $leave = new Leave();
-            $leave->candidate_id =$user->candidate->id;
-            $leave->user_id = $user->id;
+            $leave->candidate_id =$user->id;
             $leave->start_date = Carbon::parse($request->start_date);
             $leave->end_date = Carbon::parse($request->end_date);
             $leave->remarks = $request->remarks;

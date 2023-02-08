@@ -31,7 +31,7 @@ class AuthEmployerRepository implements AuthEmployerInterface
         $args = array(
             'apikey' => 'diwZp392vfj329fff3@zzvcne2308fE3f29fhnd249',
             'from'  => 'InfoAlert',
-            'contacts'  => [$phone] ,
+            'contacts'  => [$phone],
             "message_type" => "plain",
             'message'  => $message,
             "sender_id" => [
@@ -64,7 +64,6 @@ class AuthEmployerRepository implements AuthEmployerInterface
         if ($status_code == 200) {
             $response = json_decode($response);
             return $response;
-
         } else {
             throw new Exception('Error While Send OTP Via Sms.');
         }
@@ -73,40 +72,65 @@ class AuthEmployerRepository implements AuthEmployerInterface
     public function register($request)
     {
 
+        $user = User::where('phone', $request->phone)
+            ->where('type', 'employer')
+            ->first();
+        if (!$user) {
+            $user = User::create([
+                'phone' => $request->phone,
+                'password' => bcrypt($request->phone),
+                'type' => 'employer',
+            ]);
 
-        $user = User::create([
-            'phone' => $request->phone,
-            'password' => bcrypt($request->phone),
-            'type' => 'employer',
-        ]);
 
+            if ($user) {
+                $user->assignRole('employer');
 
-        if ($user) {
-            $user->assignRole('employer');
+                $user->otp()->create([
+                    'otp' => rand(0000, 9999)
+                ]);
+
+                $employer = new Employer();
+                $employer->code = 'E-' . Str::random(20);
+                $employer->phone = $request->phone;
+                $employer->user_id = $user->id;
+
+                if ($employer->save()) {
+                    $message = "Please verify using otp: " . $user->otp->otp;
+                    $sendSms =  $this->sendSms($user->phone, $message);
+                    if ($sendSms) {
+                    return [
+                        'otp' => $user->otp->otp
+                    ];
+                    }
+                }
+                throw new Exception("Something went wrong");
+            }
+
+            throw new Exception("Something went wrong while creating candidate");
+        }
+        $token =  $user->createToken('API Token')->accessToken;
+        if (!empty($user->otp)) {
+            $otp = $user->otp->otp;
+        } else {
 
             $user->otp()->create([
                 'otp' => rand(0000, 9999)
             ]);
-
-            $employer = new Employer();
-            $employer->code = 'E-' . Str::random(20);
-            $employer->phone = $request->phone;
-            $employer->user_id = $user->id;
-
-            if ($employer->save()) {
-                $message= "Please verify using otp: ".$user->otp->otp;
-                $sendSms =  $this->sendSms($user->phone, $message);
-                if($sendSms){
-                    return [
-                        'otp' => $user->otp->otp
-                    ];
-                }
-
-            }
-            throw new Exception("Something went wrong");
+            $otp = $user->otp->otp;
         }
 
-        throw new Exception("Something went wrong while creating candidate");
+        $message = "Please verify using otp: " . $otp;
+        $sendSms =  $this->sendSms($user->phone, $message);
+        if ($sendSms) {
+
+
+
+            return [
+                'otp' => $otp,
+                'token' => $token
+            ];
+        }
     }
 
 
@@ -177,5 +201,46 @@ class AuthEmployerRepository implements AuthEmployerInterface
             'user' => auth()->user(),
             'token' => $token
         ];
+    }
+
+
+
+    public function changePhone($request)
+    {
+
+
+        $user = User::where('id', auth()->user()->id)->first();
+        if ($user) {
+
+            $otherUsers = User::where('id', '!=', $user->id)
+                ->where('type', 'employer')
+                ->where('phone', $request->old_phone)->exists();
+
+            if ($otherUsers == true) {
+                throw new Exception("Phone number already exists");
+            } else {
+
+                $user->phone = $request->new_phone;
+                if ($user->update() == true) {
+                    $otp = $user->otp->updateOrCreate([
+                        'user_id' => $user->id
+                    ], [
+                        'otp' => rand(0000, 9999)
+                    ]);
+
+                    $message = "Please verify using otp: " . $otp;
+                    $sendSms =  $this->sendSms($user->phone, $message);
+                    if ($sendSms) {
+
+
+
+                        return [
+                            'otp' => $otp,
+                            // 'token' => $token
+                        ];
+                    }
+                }
+            }
+        }
     }
 }

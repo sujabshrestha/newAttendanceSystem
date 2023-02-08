@@ -27,14 +27,24 @@ class Candidate extends Model
     ];
 
 
+
     public function companies(){
-        return $this->belongsToMany(Company::class, 'company_candidates')
+       return $this->belongsToMany(Company::class, 'company_candidates')
         ->withPivot('verified_status','status',  'office_hour_start',
         'office_hour_end',
         'salary_type',
         'salary_amount',
         'duty_time');
+
     }
+
+
+    public function companyCandidate(){
+        return $this->hasMany(CompanyCandidate::class, 'candidate_id');
+    }
+
+
+
 
     public function employer(){
         return $this->belongsTo(User::class, 'employer_id');
@@ -43,6 +53,18 @@ class Candidate extends Model
 
     public function user(){
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+
+    public function attendances(){
+        return $this->hasMany(Attendance::class, 'candidate_id');
+    }
+
+
+    //has today attendace
+
+    public function todayAttendance(){
+        return $this->hasMany(Attendance::class, 'candidate_id')->whereDate('created_at', today());
     }
 
 

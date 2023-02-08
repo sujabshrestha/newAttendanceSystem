@@ -35,7 +35,8 @@ class ApiCandidateAuthController extends Controller
             $candidatesubmit = $this->authCandidate->register($request);
             if ($candidatesubmit) {
                 $data = [
-                    'otp' => $candidatesubmit['otp']
+                    'otp' => $candidatesubmit['otp'] ?? null,
+                    'token' => $candidatesubmit['token'] ?? null
                 ];
                 return $this->response->responseSuccess($data,"Successfully Registered. Otp Sent Successfull", 200);
             }
@@ -159,4 +160,24 @@ class ApiCandidateAuthController extends Controller
             return $this->response->responseError($e->getMessage());
         }
     }
+
+
+
+    public function changePhone(Request $request){
+        try {
+
+            $changePhone = $this->authCandidate->changePhone($request);
+            if($changePhone ){
+                $data = [
+                    'otp' => $changePhone['otp']
+                ];
+                return $this->response->responseSuccess($data, "Successfully changed", 200);
+            }
+
+        } catch (\Exception $e) {
+
+    }
+}
+
+
 }

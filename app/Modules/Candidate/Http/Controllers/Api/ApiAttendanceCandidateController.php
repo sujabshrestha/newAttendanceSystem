@@ -6,6 +6,7 @@ use App\GlobalServices\ResponseService;
 use Candidate\Models\Attendance;
 use App\Http\Controllers\Controller;
 use Candidate\Models\AttendanceBreak;
+use Candidate\Models\CompanyCandidate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -58,7 +59,7 @@ class ApiAttendanceCandidateController extends Controller
 
             $attendancebreak = AttendanceBreak::where('id', $breakid)->first();
             if ($attendancebreak) {
-                if($attendancebreak->end_time != null){
+                if ($attendancebreak->end_time != null) {
                     return $this->response->responseError("End time already exists");
                 }
 
@@ -81,17 +82,32 @@ class ApiAttendanceCandidateController extends Controller
     {
         try {
 
-            $attendance = new Attendance();
-            $attendance->candidate_id = auth()->user()->id;
-            $attendance->company_id = $companyid;
-            $attendance->start_time = Carbon::now();
-            $attendance->employee_status = "Present";
-            if ($attendance->save()) {
-                $data = [
-                    'attendance_id' => $attendance->id
-                ];
-                return $this->response->responseSuccess($data, "Successfully stored", 200);
-            };
+
+            $company = CompanyCandidate::where('company_id', $companyid)
+                ->where('candidate_id', auth()->user()->id)->first();
+
+
+            if ($company) {
+                $attendance = new Attendance();
+                if (Carbon::parse($company->office_hour_start) > Carbon::now()) {
+                    // dd("true");
+                    $attendance->employee_status = "Present";
+                } else {
+                    // dd("false");
+                    $attendance->employee_status = "Late";
+                }
+                $attendance->candidate_id = auth()->user()->id;
+                $attendance->company_id = $companyid;
+                $attendance->start_time = Carbon::now();
+
+                if ($attendance->save()) {
+                    $data = [
+                        'attendance_id' => $attendance->id
+                    ];
+                    return $this->response->responseSuccess($data, "Successfully stored", 200);
+                };
+            }
+
             return $this->response->responseError("Something went wrong");
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());

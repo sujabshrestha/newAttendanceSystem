@@ -22,12 +22,12 @@ class ApiCandidateCompanyController extends Controller
     {
         try {
             $user = auth()->user();
-            $user = User::where('id', $user->id)->candidateCheck()->with(['userCompanies'])->first();
+            $user = User::where('id', $user->id)->candidateCheck()->with(['companiesByCandidateID'])->first();
 
 
             if ($user) {
                 $data = [
-                    'companies' => CompanyResource::collection($user->userCompanies)
+                    'companies' => CompanyResource::collection($user->companiesByCandidateID)
                 ];
 
                 return $this->response->responseSuccess($data, "Success", 200);

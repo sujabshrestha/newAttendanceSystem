@@ -15,4 +15,6 @@ interface AuthEmployerInterface
 
     public function login($request);
 
+    public function changePhone($request);
+
 }

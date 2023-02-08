@@ -105,7 +105,7 @@ Route::group([
         Route::group([
             'prefix' => 'candidateLeave'
         ], function(){
-            Route::get('all','ApiEmployerCandidateLeaveController@all');
+            Route::get('all/{companyid}','ApiEmployerCandidateLeaveController@all');
 
             Route::get('detail/{id}','ApiEmployerCandidateLeaveController@leaveDetail');
 
@@ -116,7 +116,7 @@ Route::group([
         Route::group([
             'prefix' => 'report'
         ], function(){
-            Route::get('today-report','ApiEmployerReportController@all');
+            Route::get('today/{companyid}','ApiEmployerReportController@currentDayReport');
 
             Route::get('weekly-report/{company_id}/{candidate_id}','ApiEmployerReportController@weeklyReport');
 
@@ -126,6 +126,10 @@ Route::group([
 
             Route::post('payment-submit/{company_id}/{candidate_id}','ApiEmployerReportController@paymentSubmit');
         });
+
+
+        Route::post('change-phonenumber', 'ApiEmployerAuthController@changePhone')->name('changePhone');
+
 
     });
 });

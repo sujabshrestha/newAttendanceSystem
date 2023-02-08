@@ -2,11 +2,13 @@
 
 namespace Employer\Models;
 
-use App\Models\Candidate;
+
 use App\Models\CompanyGovernmentleave;
 use App\Models\CompanySpecialleave;
 use App\Models\User;
+use Candidate\Models\Attendance;
 use Candidate\Models\BusinessLeaveday;
+use Candidate\Models\Candidate;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
 class Company extends Model
 {
     use HasFactory, Sluggable;
+
+
 
     protected $fillable = [
         'name',
@@ -37,8 +41,22 @@ class Company extends Model
     }
 
     public function candidates(){
-        return $this->belongsTo(Candidate::class, 'company_candidates', 'company_id', 'candidate_id');
+        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id');
     }
+
+
+    public function candidatesByCompanyID($companyid = null){
+        // dd($this->id,$this->company_id);
+        // dd($companyid);
+        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')->withPivot('code','office_hour_start',
+        'office_hour_end', 'status','duty_time', 'salary_amount',
+        'salary_type','overtime')->distinct();
+    }
+
+    public function users(){
+        return $this->belongsToMany(User::class, 'company_candidates','company_id', 'user_id');
+    }
+
 
 
     public function sluggable(): array
@@ -49,6 +67,15 @@ class Company extends Model
             ]
         ];
     }
+
+    public function attendances(){
+        return $this->hasMany(Attendance::class, 'company_id');
+    }
+
+    //company users
+
+
+
 
 
     public function govLeaves(){

@@ -37,9 +37,10 @@ class ApiEmployerAuthController extends Controller
             $employersubmit = $this->authEmployer->register($request);
             if ($employersubmit) {
                 $data = [
-                    'otp' => $employersubmit['otp']
+                    'otp' => $employersubmit['otp'] ?? null,
+                    'token' => $employersubmit['token'] ?? null
                 ];
-                return $this->response->responseSuccess($data,"Successfully Registered. Otp Sent Successfull", 200);
+                return $this->response->responseSuccess($data, "Successfully Registered. Otp Sent Successfull", 200);
             }
             return $this->response->responseError("Something went wrong", 400);
         } catch (\Exception $e) {
@@ -197,4 +198,23 @@ class ApiEmployerAuthController extends Controller
             return $this->response->responseError($e->getMessage());
         }
     }
+
+
+    public function changePhone(Request $request)
+    {
+        try {
+
+            $changePhone = $this->authEmployer->changePhone($request);
+            if ($changePhone) {
+                $data = [
+                    'otp' => $changePhone['otp']
+                ];
+                return $this->response->responseSuccess($data, "Successfully changed", 200);
+            }
+        } catch (\Exception $e) {
+        }
+    }
+
+
+
 }
