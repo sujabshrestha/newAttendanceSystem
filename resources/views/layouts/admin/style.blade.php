@@ -7,6 +7,10 @@
 <link href="{{ asset('backendfiles/assets/css/plugins.css') }}" rel="stylesheet" type="text/css" />
 <!-- END GLOBAL MANDATORY STYLES -->
 
+{{-- Sweet Alerts --}}
+{{-- <link href="{{ asset('backendfiles/plugins/sweetalerts/sweetalert2.min.css') }}" rel="stylesheet" type="text/css" /> --}}
+<link href="{{ asset('backendfiles/plugins/sweetalerts/sweetalert.css') }}" rel="stylesheet" type="text/css" />
+{{-- <link href="{{ asset('backendfiles/assets/css/components/custom-sweetalert.css') }}" rel="stylesheet" type="text/css" /> --}}
 
 
 <link rel="stylesheet" href="http://cdn.bootcss.com/toastr.js/latest/css/toastr.min.css">

@@ -49,6 +49,22 @@ Route::group([
 
             Route::get('get-employers-data','SuperAdminEmployerController@getEmployerData')->name('employer.getEmployerData');
 
+            // Leave Type CRUD 
+            Route::get('all-leave-types','SuperAdminLeaveTypeController@index')->name('leave.type.index');
+
+            Route::post('leave-type/store/','SuperAdminLeaveTypeController@store')->name('leave.type.store');
+
+            // Route::get('leave-type/view/{id}','SuperAdminLeaveTypeController@show')->name('leave.type.show');
+
+            Route::get('leave-type/edit/{slug}','SuperAdminLeaveTypeController@edit')->name('leave.type.edit');
+
+
+            Route::post('leave-type/update/{slug}','SuperAdminLeaveTypeController@update')->name('leave.type.update');
+
+            Route::get('leave-type/delete/{slug}','SuperAdminLeaveTypeController@destroy')->name('leave.type.destroy');
+
+            Route::get('get-leaveTypes-data','SuperAdminLeaveTypeController@getLeaveTypeData')->name('leave.type.getLeaveTypeData');
+
         });
     });
 });
