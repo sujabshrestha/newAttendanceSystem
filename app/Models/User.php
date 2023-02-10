@@ -18,11 +18,6 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -34,9 +29,28 @@ class User extends Authenticatable
 
     ];
 
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+     // Scopes
+    public function scopeEmployers($q){
+        return $q->where('type',"employer");
+    }
+
+    public function scopeCandidateCheck($q){
+        return $q->where('type', 'candidate');
+    }
+ 
+
+    // Relationships
     public function employerCompany(){
-        return $this->hasOne(Company::class, 'employer_id');
+        return $this->hasMany(Company::class, 'employer_id');
     }
 
 
@@ -49,27 +63,6 @@ class User extends Authenticatable
         return $this->hasMany(CompanyCandidate::class, 'candidate_id');
     }
 
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
-
     public function otp(){
         return $this->hasOne(UserOtp::class, 'user_id');
     }
@@ -80,11 +73,6 @@ class User extends Authenticatable
 
     public function candidate(){
         return $this->hasOne(Candidate::class, 'user_id');
-    }
-
-
-    public function scopeCandidateCheck($q){
-        return $q->where('type', 'candidate');
     }
 
     public function receivedInvitation(){

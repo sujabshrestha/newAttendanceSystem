@@ -120,7 +120,7 @@ Route::group([
 
             Route::get('weekly-report/{company_id}/{candidate_id}','ApiEmployerReportController@weeklyReport');
 
-            Route::get('monthly-report/{company_id}/{candidate_id}','ApiEmployerReportController@monthlyReport');
+            Route::get('monthly-report/{company_id}/{candidate_id}  ','ApiEmployerReportController@monthlyReport');
 
             Route::get('yearly-report/{company_id}/{candidate_id}','ApiEmployerReportController@yearlyReport');
 

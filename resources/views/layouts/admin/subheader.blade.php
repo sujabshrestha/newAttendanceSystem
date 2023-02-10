@@ -6,18 +6,20 @@
             <li>
                 <div class="page-header">
 
-                    <nav class="breadcrumb-one" aria-label="breadcrumb">
+                    <nav class="breadcrumb-item" aria-label="breadcrumb">
                         <li class="breadcrumb-item">
-                            <a href="{{ route('backend.auth.dashboard') }}">
+                            <a href="{{ route('backend.dashboard') }}">
                                 Dashboard
                             </a>
                         </li>
-                        
+                        @if (!(Route::is('backend.dashboard')))
                         <li class="breadcrumb-item active" aria-current="page">
                             <span>
                                 @yield('breadcrumb','')
                             </span>
                         </li>
+                        @endif
+                       
                     </nav>
 
                 </div>

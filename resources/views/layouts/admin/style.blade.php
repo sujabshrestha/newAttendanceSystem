@@ -7,9 +7,7 @@
 <link href="{{ asset('backendfiles/assets/css/plugins.css') }}" rel="stylesheet" type="text/css" />
 <!-- END GLOBAL MANDATORY STYLES -->
 
-<!-- BEGIN PAGE LEVEL PLUGINS/CUSTOM STYLES -->
-<link href="{{ asset('backendfiles/plugins/apex/apexcharts.css') }}" rel="stylesheet" type="text/css">
-<link href="{{ asset('backendfiles/assets/css/dashboard/dash_1.css') }}" rel="stylesheet" type="text/css" />
+
 
 <link rel="stylesheet" href="http://cdn.bootcss.com/toastr.js/latest/css/toastr.min.css">
 

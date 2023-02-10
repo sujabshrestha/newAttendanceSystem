@@ -36,6 +36,26 @@ class Company extends Model
         'office_hour_end'
     ];
 
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'name'
+            ]
+        ];
+    }
+
+
+    // Scopes
+    public function scopeActive($q){
+        return $q->where('status',"Active");
+    }
+
+    public function scopeInative($q){
+        return $q->where('status',"Inactive");
+    }
+
+    // Relationships
     public function employer(){
         return $this->belongsTo(User::class, 'employer_id');
     }
@@ -56,27 +76,12 @@ class Company extends Model
     public function users(){
         return $this->belongsToMany(User::class, 'company_candidates','company_id', 'user_id');
     }
-
-
-
-    public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => 'name'
-            ]
-        ];
-    }
-
+   
     public function attendances(){
         return $this->hasMany(Attendance::class, 'company_id');
     }
 
     //company users
-
-
-
-
 
     public function govLeaves(){
         return $this->hasMany(CompanyGovernmentleave::class, 'company_id');
