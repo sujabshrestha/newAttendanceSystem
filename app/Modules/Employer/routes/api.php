@@ -97,9 +97,6 @@ Route::group([
             Route::get('/all-candidates', 'ApiAttendanceController@allCandidates');
         });
 
-
-
-
         //company candidate leaves
 
         Route::group([
@@ -127,8 +124,14 @@ Route::group([
             Route::post('payment-submit/{company_id}/{candidate_id}','ApiEmployerReportController@paymentSubmit');
         });
 
-
         Route::post('change-phonenumber', 'ApiEmployerAuthController@changePhone')->name('changePhone');
+        
+        
+        Route::group([
+            'prefix' => 'package'
+        ],function(){
+            Route::get('all','ApiPackageController@index');
+        });
 
 
     });
