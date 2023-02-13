@@ -1,22 +1,22 @@
-@extends('layouts.admin.master')
+@extends('backend.layouts.master')
 
-@section('title','Leave Type')
+@section('title','EGP Nepal | Notice Type - Trash Index')
 
-@section('breadcrumb', 'Leave Type')
+@section('breadcrumb', 'Notice Type Trash')
 
 
 @section('content')
   <!--  BEGIN CONTENT AREA  -->
-
+  <div id="content" class="main-content">
+    <div class="layout-px-spacing">
         <div class="row layout-top-spacing">
             {{-- Table --}}
-            <div class="col-xl-7 col-lg-6 col-sm-7  layout-spacing">
+            <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
                 <div class="widget-content widget-content-area br-6">
                     <div class="col-12">
-                        <h5 style="display: inline;">Leave Type</h5>
-                        {{-- <a href="{{ route("backend.global.option.noticeType.trashedIndex") }}" class="btn btn-danger float-right"><i class="fa fa-trash"></i> Trash</a> --}}
+                        <h5 style="display: inline;">Notice Type</h5>
+                        <a href="{{ route("backend.global.option.noticeType.index") }}" class="btn btn-secondary float-right">Previous Page</a>
                     </div>
-                    <hr>
                     <div class="table-responsive mb-4 mt-4">
                         <table id="global-table" class="table table-hover" style="width:100%">
                             <thead>
@@ -34,16 +34,9 @@
                     </div>
                 </div>
             </div>
-            {{-- Create Form --}}
-             @include('SuperAdmin::backend.leaveType.create')
+
         </div>
-   
-
-    <!-- Modal -->
-    <div class="modal animated fadeInUp" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-
     </div>
-
 </div>
 <!--  END CONTENT AREA  -->
 @endsection
@@ -55,11 +48,11 @@
     $('#global-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: "{{ route('backend.leave.type.getLeaveTypeData') }}",
+        ajax: "{{ route('backend.global.option.noticeType.getTrashedNoticeTypeData') }}",
         columns: [{
                 "data": 'DT_RowIndex',
-                    orderable: false,
-                    searchable: false
+                orderable: false,
+                searchable: false
             },
             {
                 data: 'title',
@@ -81,6 +74,9 @@
             },
         ]
     });
+
+
+
 </script>
 
 @endpush

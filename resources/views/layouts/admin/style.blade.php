@@ -20,7 +20,7 @@
 <link href="{{ asset('backendfiles/plugins/table/datatable/dt-global_style.css') }}" rel="stylesheet" type="text/css" >
 
 {{-- Summernote css/js --}}
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
 
 {{-- FileUpload --}}
 <link href="{{ asset('backendfiles/plugins/file-upload/file-upload-with-preview.min.css') }}" rel="stylesheet" type="text/css" />

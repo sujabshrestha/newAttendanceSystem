@@ -1,10 +1,10 @@
 <?php
 
-namespace Employer\Http\Requests;
+namespace SuperAdmin\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class LoginRequest extends FormRequest
+class LeaveTypeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +24,17 @@ class LoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email',
-            'password' => 'required'
+            'title' => 'required|max:255',
+            'status' =>  'required|in:Active,Inactive'
+    
+        ];
+    }
+    
+    public function messages()
+    {
+        return [
+            'title.required' => 'Please Enter Title.',
+            'status.required' => 'Please Enter Status.',
         ];
     }
 }

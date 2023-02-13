@@ -28,6 +28,13 @@ class SuperAdminLeaveTypeController extends Controller
                 $data = LeaveType::query();
                 return DataTables::of($data)
                 ->addIndexColumn()
+                ->editColumn('status',function($row){
+                    if($row->status == "Active"){
+                        return '<div class="badge badge-success">'.$row->status.'</div>';
+                    }else{
+                        return '<div class="badge badge-danger">'.$row->status.'</div>';
+                    }
+                })
                 ->addColumn('action',function($row){
                     $actionBtn = '<a href="javascript:void(0)" id="'. route('backend.leave.type.edit',$row->slug) .'" data-id=' . $row->slug . ' class="edit btn btn-info btn-sm" title="Edit"><i
                                 class="far fa-edit"></i></a>
@@ -36,7 +43,7 @@ class SuperAdminLeaveTypeController extends Controller
                               ';
                     return $actionBtn;
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['action','status'])
                 ->make(true);
             }
         }catch (Exception $e) {
@@ -53,6 +60,8 @@ class SuperAdminLeaveTypeController extends Controller
             if($leaveType->save() == true){
                 return $this->response->responseSuccessMsg('Successfully Stored!!');
             }
+            return $this->response->responseError('Something Went Wrong While Saving. Please Try Again.');
+
         } catch(Exception $e){
             return $this->response->responseError($e->getMessage());
         }
@@ -64,6 +73,8 @@ class SuperAdminLeaveTypeController extends Controller
             if($leaveType){
                 return view('SuperAdmin::backend.leaveType.edit',compact('leaveType'));
             }
+            return $this->response->responseError('Leave Type Not Found');        
+
         }catch(Exception $e){
             return $this->response->responseError($e->getMessage());
         }
@@ -79,7 +90,11 @@ class SuperAdminLeaveTypeController extends Controller
                 if ($leaveType->update() == true) {
                     return $this->response->responseSuccessMsg('Successfully Updated!!');
                 }
+                return $this->response->responseError('Something Went Wrong While Updating. Please Try Again.');
+
             }
+            return $this->response->responseError('Leave Type Not Found');        
+
           
         } catch (Exception $e) {
             return $this->response->responseError($e->getMessage());
@@ -94,9 +109,9 @@ class SuperAdminLeaveTypeController extends Controller
                 if($leaveTypeDelete == true){
                     return $this->response->responseSuccessMsg('Successfully Deleted');
                 }
+                return $this->response->responseError('Can not be Deleted');
             }
-           
-            return $this->response->responseError('Can not be Deleted');
+            return $this->response->responseError('Leave Type Not Found');        
         }catch(Exception $e){
             return $this->response->responseError($e->getMessage());
         }

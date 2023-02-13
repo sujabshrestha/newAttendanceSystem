@@ -1,13 +1,10 @@
 <div class="col-xl-5 col-lg-6 col-sm-5  layout-spacing">
     <div class="statbox widget box box-shadow" style="padding: 0px">
         <div class="widget-content widget-content-area">
-            <div class="col-xl-12 col-md-12 col-sm-12">
-                <div class="row">
-                    <div class="form-group col-md-12">
-                        <h5>Create Leave Type</h5>
-                    </div>
-                </div>
+            <div class="form-group col-md-12">
+                <h5>Create Leave Type</h5>
             </div>
+            <hr>
             <div class="col-xl-12 col-md-12 col-sm-12">
                 <div class="row">
                 <form action="{{ route('backend.leave.type.store') }}" method="post" enctype="multipart/form-data" id="submit-form">

@@ -94,22 +94,19 @@
                 $('#summernote-editor').summernote('code', '');
                 $('#submit-form').trigger("reset");
                 $('#createModal').modal('hide');
-                $('.custom-file-container__custom-file__custom-file-control').text('Choose file...')
-                    .append(
-                        '<span class="custom-file-container__custom-file__custom-file-control__button"> Browse </span>'
-                    );
-                $('.custom-file-container__image-preview').css("background-image", "none");
-
                 currentevent.attr('disabled', false);
 
             },
             error: function(err) {
+               
                 if (err.status == 422) {
                     $.each(err.responseJSON.errors, function(i, error) {
                         var el = $(document).find('[name="' + i + '"]');
                         el.after($('<span style="color: red;">' + error[0] + '</span>')
-                            .fadeOut(4000));
+                            .fadeOut(7000));
                     });
+                }else{
+                    toastr.error(err.responseJSON.message)
                 }
 
                 currentevent.attr('disabled', false);
@@ -139,6 +136,19 @@
                 });
                 $.unblockUI();
             },
+            error: function(err) {
+                
+                if (err.status == 422) {
+                    $.each(err.responseJSON.errors, function(i, error) {
+                        var el = $(document).find('[name="' + i + '"]');
+                        el.after($('<span style="color: red;">' + error[0] + '</span>')
+                            .fadeOut(3000));
+                    });
+                }
+            },
+            complete: function() {
+                $.unblockUI();
+            }
         });
     });
 
@@ -176,6 +186,9 @@
                 $('#global-table').DataTable().ajax.reload();
             },
             error: function(err) {
+                if(err.status){
+                    toastr.error(err.responseJSON.message)
+                }
                 if (err.status == 422) {
                     $.each(err.responseJSON.errors, function(i, error) {
                         var el = $(document).find('[name="' + i + '"]');

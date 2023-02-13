@@ -58,13 +58,27 @@ Route::group([
 
             Route::get('leave-type/edit/{slug}','SuperAdminLeaveTypeController@edit')->name('leave.type.edit');
 
-
             Route::post('leave-type/update/{slug}','SuperAdminLeaveTypeController@update')->name('leave.type.update');
 
             Route::get('leave-type/delete/{slug}','SuperAdminLeaveTypeController@destroy')->name('leave.type.destroy');
 
             Route::get('get-leaveTypes-data','SuperAdminLeaveTypeController@getLeaveTypeData')->name('leave.type.getLeaveTypeData');
 
+
+            // Package CRUD
+            Route::get('all-packages','SuperAdminPackageController@index')->name('package.index');
+
+            Route::post('package/store/','SuperAdminPackageController@store')->name('package.store');
+
+            Route::get('package/view/{id}','SuperAdminPackageController@show')->name('package.show');
+
+            Route::get('package/edit/{slug}','SuperAdminPackageController@edit')->name('package.edit');
+
+            Route::post('package/update/{slug}','SuperAdminPackageController@update')->name('package.update');
+
+            Route::get('package/delete/{slug}','SuperAdminPackageController@destroy')->name('package.destroy');
+
+            Route::get('get-packages-data','SuperAdminPackageController@getPackageData')->name('package.getPackageData');
         });
     });
 });
