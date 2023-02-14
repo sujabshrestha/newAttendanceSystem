@@ -16,6 +16,7 @@ class Package extends Model
         'remarks',
         'price',
         'slug',
+        'feature'
     ];
 
     public function sluggable(): array
@@ -26,6 +27,10 @@ class Package extends Model
             ]
         ];
     }
+
+    protected $casts = [
+        'feature' => 'array'
+    ];
 
     // Scopes
     public function scopeActive($q){

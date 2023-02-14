@@ -13,7 +13,8 @@ class PackageResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'status' => $this->status,
-            'remarks' => $this->desc
+            'remarks' => $this->remarks,
+            'feature' => $this->feature
          ];
     }
 }

@@ -10,11 +10,11 @@
 
         <div class="row layout-top-spacing">
             {{-- Table --}}
-            <div class="col-xl-7 col-lg-6 col-sm-7 ">
+            <div class="col-xl-12 col-lg-12 col-sm-12">
                 <div class="widget-content widget-content-area br-6">
                     <div class="col-12">
                         <h5 style="display: inline;">Package</h5>
-                        {{-- <a href="{{ route("backend.global.option.noticeType.trashedIndex") }}" class="btn btn-danger float-right"><i class="fa fa-trash"></i> Trash</a> --}}
+                        <a href="{{ route("backend.package.create") }}" class="btn btn-primary float-right"> Add New Package</a>
                     </div>
                     <hr>
                     <div class="table-responsive mb-4 mt-4">
@@ -25,6 +25,7 @@
                                     <th width="10%">Title</th>
                                     <th width="10%">Status</th>
                                     <th width="10%">Price</th>
+                                    <th width="10%">Features</th>
                                     <th width="10%">Action</th>
                                 </tr>
                             </thead>
@@ -36,14 +37,13 @@
                 </div>
             </div>
             {{-- Create Form --}}
-             @include('SuperAdmin::backend.package.create')
+             {{-- @include('SuperAdmin::backend.package.create') --}}
         </div>
    
 
     <!-- Modal -->
-    <div class="modal animated fadeInUp" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
 
-    </div>
+   
 
 </div>
 <!--  END CONTENT AREA  -->
@@ -79,15 +79,24 @@
             },
             {
                 data: 'price',
-                width:'15%',
+                width:'10%',
                 render: function(data, type, row) {
                     return row.price;
                 }
             },
             {
+                data: 'feature',
+                width:'25%',
+                render: function(data, type, row) {
+                    separator = '<br>';
+                    feature = row.feature.join(separator);
+                    return feature
+                }
+            },
+            {
                 data: 'action',
                 name: 'action',
-                width:'15%',
+                width:'10%',
                 orderable: true,
                 searchable: true
             },

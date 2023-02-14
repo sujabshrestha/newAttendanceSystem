@@ -6,6 +6,7 @@ use App\GlobalServices\ResponseService;
 use SuperAdmin\Models\Package;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
 use Exception;
 use SuperAdmin\Http\Requests\PackageStoreRequest;
 use Yajra\DataTables\Facades\DataTables;
@@ -40,7 +41,7 @@ class SuperAdminPackageController extends Controller
                     }
                 })
                 ->addColumn('action',function($row){
-                    $actionBtn = '<a href="javascript:void(0)" id="'. route('backend.package.edit',$row->slug) .'" data-id=' . $row->slug . ' class="edit btn btn-info btn-sm" title="Edit"><i
+                    $actionBtn = '<a href="'. route('backend.package.edit',$row->slug) .'" class="btn btn-info btn-sm" title="Edit"><i
                                 class="far fa-edit"></i></a>
                                 <a href="javascript:void(0)" id="'. route('backend.package.destroy',$row->slug) .'" data-id='.$row->slug.' class="delete btn btn-danger btn-sm" title="Delete"><i
                                 class="far fa-trash-alt"></i></a>
@@ -55,20 +56,34 @@ class SuperAdminPackageController extends Controller
         }
     }
 
+    public function create(){
+        try{
+            return view('SuperAdmin::backend.package.create');
+        }catch(Exception $e){
+            Toastr::error($e->getMessage());
+            return redirect()->back();
+        }
+    }
+
     public function store(PackageStoreRequest $request ){
         try {
+            // dd($request->all());
             $package = new Package();
             $package->title = $request->title;
             $package->status = $request->status;
             $package->price = $request->price;
             $package->remarks = $request->remarks;
+            $package->feature = $request->feature;
             if($package->save() == true){
-                return $this->response->responseSuccessMsg('Successfully Stored!!');
+                Toastr::success('Successfully Stored!!');
+                return redirect()->back();
             }
-            return $this->response->responseError('Something Went Wrong While Saving. Please Try Again.');        
-
+            Toastr::error("Something Went Wrong While Saving. Please Try Again.");
+            return redirect()->back();
+                
         } catch(Exception $e){
-            return $this->response->responseError($e->getMessage());
+            Toastr::error($e->getMessage());
+            return redirect()->back();
         }
     }
 
@@ -78,10 +93,11 @@ class SuperAdminPackageController extends Controller
             if($package){
                 return view('SuperAdmin::backend.package.edit',compact('package'));
             }
-            return $this->response->responseError('Package Not Found');        
-
+            Toastr::error("Package Not Found");
+            return redirect()->back();
         }catch(Exception $e){
-            return $this->response->responseError($e->getMessage());
+            Toastr::error($e->getMessage());
+            return redirect()->back();
         }
     }
 
@@ -93,16 +109,19 @@ class SuperAdminPackageController extends Controller
                 $package->status = $request->status;
                 $package->price = $request->price;
                 $package->remarks = $request->remarks;
+                $package->feature = $request->feature;
                 if ($package->update() == true) {
-                    return $this->response->responseSuccessMsg('Successfully Updated!!');
+                    Toastr::success('Successfully Updated!!');
+                    return redirect()->back();
                 }
-                return $this->response->responseError('Something Went Wrong While Updating. Please Try Again.');        
+                Toastr::error("Something Went Wrong While Updating. Please Try Again.");
+                return redirect()->back();      
             }
-            return $this->response->responseError('Package Not Found');        
-
-          
+            Toastr::error("Package Not Found");
+            return redirect()->back();
         } catch (Exception $e) {
-            return $this->response->responseError($e->getMessage());
+            Toastr::error($e->getMessage());
+            return redirect()->back();
         }
     }
 

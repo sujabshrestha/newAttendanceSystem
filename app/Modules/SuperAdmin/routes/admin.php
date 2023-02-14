@@ -68,6 +68,8 @@ Route::group([
             // Package CRUD
             Route::get('all-packages','SuperAdminPackageController@index')->name('package.index');
 
+            Route::get('package/create','SuperAdminPackageController@create')->name('package.create');
+
             Route::post('package/store/','SuperAdminPackageController@store')->name('package.store');
 
             Route::get('package/view/{id}','SuperAdminPackageController@show')->name('package.show');

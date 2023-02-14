@@ -18,6 +18,7 @@ Route::group([
 
     Route::post('login', 'ApiEmployerAuthController@login')->name('login');
 
+
     Route::group([
         'middleware' => ['auth:api', 'employerMiddleware']
     ], function () {
@@ -125,7 +126,6 @@ Route::group([
         });
 
         Route::post('change-phonenumber', 'ApiEmployerAuthController@changePhone')->name('changePhone');
-        
         
         Route::group([
             'prefix' => 'package'
