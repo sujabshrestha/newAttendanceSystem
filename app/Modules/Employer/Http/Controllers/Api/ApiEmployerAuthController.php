@@ -127,7 +127,7 @@ class ApiEmployerAuthController extends Controller
         try {
             $user = User::where('id', auth()->user()->id)->first();
             if ($user) {
-                $user->name = $request->firstname;
+                $user->firstname = $request->firstname;
                 $user->email = $request->email;
                 if ($request->uploadfile) {
                     $uploaded = $this->file->storeFile($request->uploadfile);
@@ -135,8 +135,8 @@ class ApiEmployerAuthController extends Controller
                 }
                 if ($user->update()) {
                     $employer = Employer::where('user_id', $user->id)->first();
-                    $employer->firstname = $request->firstname;
-                    $employer->lastname = $request->lastname;
+                    $employer->name = $request->firstname;
+                    // $employer->lastname = $request->lastname;
                     $employer->email = $request->email;
                     if ($request->uploadfile) {
                         $uploaded = $this->file->storeFile($request->uploadfile);

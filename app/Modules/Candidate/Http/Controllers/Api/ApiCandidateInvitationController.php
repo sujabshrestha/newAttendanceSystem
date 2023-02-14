@@ -63,16 +63,26 @@ class ApiCandidateInvitationController extends Controller
                     $invitation->status =$request->status;
 
                     if($invitation->update() == true){
-                        $company = Company::where('id', $invitation->company_id)->first();
-                        $companycandidate  = new CompanyCandidate();
-                        $companycandidate->status = 'Active';
-                        $companycandidate->verified_status = 'verified';
-                        $companycandidate->candidate_id = $user->id;
-                        $companycandidate->company_id = $company->id;
+                        $companycandidate = CompanyCandidate::updateOrCreate([
+                            'company_id' => $invitation->company_id,
+                            'candidate_id' => $user->id,
+                        ], [
+
+                            'verified_status' => 'verified',
+                            'status' => 'Active',
+
+                        ]);
+
+                        // $company = Company::where('id', $invitation->company_id)->first();
+                        // $companycandidate  = new CompanyCandidate();
+                        // $companycandidate->status = 'Active';
+                        // $companycandidate->verified_status = 'verified';
+                        // $companycandidate->candidate_id = $user->id;
+                        // $companycandidate->company_id = $company->id;
                         // $companycandidate->user_id = $user->id;
-                        $companycandidate->office_hour_start = $company->office_hour_start;
-                        $companycandidate->office_hour_end = $company->office_hour_end;
-                        $companycandidate->save();
+                        // $companycandidate->office_hour_start = $company->office_hour_start;
+                        // $companycandidate->office_hour_end = $company->office_hour_end;
+                        // $companycandidate->save();
 
 
                         return $this->response->responseSuccessMsg("Successfully Created", 200);

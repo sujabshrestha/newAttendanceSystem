@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Candidate\Models\Attendance;
 use Candidate\Models\Candidate;
 use Candidate\Models\CompanyCandidate;
 use Candidate\Models\Leave;
@@ -97,7 +98,8 @@ class User extends Authenticatable
 
 
     public function userCompanies(){
-        return $this->belongsToMany(Company::class,'company_candidates','user_id','company_id')->withPivot('verified_status','status',  'office_hour_start',
+        return $this->belongsToMany(Company::class,'company_candidates','user_id','company_id')
+        ->withPivot('verified_status','status',  'office_hour_start',
         'office_hour_end',
         'salary_type',
         'salary_amount',
@@ -114,7 +116,7 @@ class User extends Authenticatable
         'duty_time')->where('candidate_id', '=', $user->id);
     }
 
-    public function candidateAttendance(){
+    public function attendances(){
         return $this->hasMany(Attendance::class,'candidate_id','id');
     }
 

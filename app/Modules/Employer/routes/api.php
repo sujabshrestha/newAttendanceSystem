@@ -116,9 +116,13 @@ Route::group([
         ], function(){
             Route::get('today/{companyid}','ApiEmployerReportController@currentDayReport');
 
+            Route::get('today/active-candidate/{companyid}','ApiEmployerReportController@activeCompanyCandidates');
+
+            Route::get('today/inactive-candidate/{companyid}','ApiEmployerReportController@inactiveCompanyCandidates');
+
             Route::get('weekly-report/{company_id}/{candidate_id}','ApiEmployerReportController@weeklyReport');
 
-            Route::get('monthly-report/{company_id}/{candidate_id}  ','ApiEmployerReportController@monthlyReport');
+            Route::get('monthly-report/{company_id}/{candidate_id}/{month?}','ApiEmployerReportController@monthlyReport');
 
             Route::get('yearly-report/{company_id}/{candidate_id}','ApiEmployerReportController@yearlyReport');
 
@@ -132,6 +136,12 @@ Route::group([
         ],function(){
             Route::get('all','ApiPackageController@index');
         });
+
+
+        //notification
+        Route::post('notification-send/{companyid}/{candidateid}','ApiEmployerCandidateNotificationController@notificationSent');
+
+
 
 
     });

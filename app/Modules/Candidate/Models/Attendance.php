@@ -12,6 +12,8 @@ class Attendance extends Model
     use HasFactory;
 
     protected $appends = ['break_duration'];
+
+
     public function getBreakAttribute()
     {
         $datas = $this->breaks;
@@ -35,7 +37,8 @@ class Attendance extends Model
         'end_time',
         'employee_status',
         'company_id',
-        'earning'
+        'earning',
+        'created_at'
     ];
 
 

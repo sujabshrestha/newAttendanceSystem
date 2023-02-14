@@ -15,4 +15,9 @@ class CompanyBusinessleave extends Model
     ];
 
 
+    public function businessLeaves(){
+        return $this->belongsTo(BusinessLeaveday::class, 'business_leave_id');
+    }
+
+
 }

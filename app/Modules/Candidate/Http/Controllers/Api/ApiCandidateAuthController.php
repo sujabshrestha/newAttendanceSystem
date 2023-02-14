@@ -120,26 +120,26 @@ class ApiCandidateAuthController extends Controller
 
 
             if($user){
-                $user->name = $request->firstname;
+                $user->firstname = $request->firstname;
                 $user->email = $request->email;
                 if($request->uploadfile){
                     $uploaded = $this->file->storeFile($request->uploadfile);
                     $user->image_id = $uploaded->id;
                 }
                 if($user->update()){
-                    $candidate = Candidate::where('user_id', $user->id)->first();
+                    // $candidate = Candidate::where('user_id', $user->id)->first();
 
-                    $candidate->firstname = $request->firstname;
-                    $candidate->lastname = $request->lastname;
-                    $candidate->email = $request->email;
-                    if($request->uploadfile){
-                        $uploaded = $this->file->storeFile($request->uploadfile);
-                        $candidate->profile_id = $uploaded->id;
-                    }
-                    $candidate->dob = Carbon::parse($request->dob);
-                    if($candidate->update()){
+                    // $candidate->firstname = $request->firstname;
+                    // $candidate->lastname = $request->lastname;
+                    // $candidate->email = $request->email;
+                    // if($request->uploadfile){
+                    //     $uploaded = $this->file->storeFile($request->uploadfile);
+                    //     $candidate->profile_id = $uploaded->id;
+                    // }
+                    // $candidate->dob = Carbon::parse($request->dob);
+                    // if($candidate->update()){
                         return $this->response->responseSuccessMsg("Successfully Updated");
-                    }
+                    // }
                     return $this->response->responseError("Something went wrong while updating candidate");
                 }
                 return $this->response->responseError("Something went wrong while updating user");

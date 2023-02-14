@@ -53,10 +53,10 @@ class ApiInvitationController extends Controller
 
     public function allCandidates($company_id)
     {
-        try{
+        try{    
             $user = Auth::user();
 
-            $users = User::where('type','candidate')->with('candidate')
+            $users = User::where('type','candidate')
                             ->whereDoesntHave('receivedCompanyInvitation')
                             ->latest()->get();
 

@@ -85,7 +85,7 @@ class ApiCandidateController extends Controller
     public function getCompaniesByCandidateID($id)
     {
         try {
-            $user = User::where('id', $id)->candidateCheck()->with(['userCompanies'])->first();
+            $user = User::where('id', $id)->where('type', 'candidate')->with(['userCompanies'])->first();
 
 
             if ($user) {
