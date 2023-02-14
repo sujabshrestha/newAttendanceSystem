@@ -19,9 +19,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 
-class CandidateRepository implements CandidateInterface {
+class CandidateRepository implements CandidateInterface
+{
 
-    protected $file =null, $response;
+    protected $file = null, $response;
     public function __construct(FileInterface $file, ResponseService $response)
     {
         $this->file = $file;
@@ -29,46 +30,58 @@ class CandidateRepository implements CandidateInterface {
     }
 
 
-    public function store($request, $id){
+    public function store($request, $id)
+    {
 
 
         $company = Company::where('id', $id)->first();
-        if($company){
+        // dd($request->all());
+        if ($company) {
 
-            $user = new User();
-            $user->firstname =$request->name;
 
-            $user->email =$request->email;
-            $user->phone = $request->contact;
-            $user->email_verified_at = Carbon::now();
-            $user->password = bcrypt('testing1234');
-            $user->type = 'candidate';
-            if(!$user->save()){
-                throw new Exception("Something went wrong while creating user");
-            }
+            $user = User::where('phone', $request->contact)->candidateCheck()->first();
+            if (!$user) {
+                // dd("false");
 
-            $user->assignRole('candidate');
+                $user = new User();
+                $user->firstname = $request->name;
 
-            // $candidate = new Candidate();
-            // $candidate->firstname = $request->firstname;
-            // $user->lastname =$request->lastname;
-            // if($request->code){
-            //     $candidate->code = $request->code;
-            // }else{
-            //     $candidate->code = Str::random(20);
-            // }
-            // $candidate->status = 'Active';
-            // $candidate->address = $request->address;
-            // $candidate->contact = $request->contact;
-            // $candidate->email = $request->email;
-            // $candidate->dob = $request->dob;
-            // $candidate->user_id = $user->id;
-            // $candidate->employer_id = auth()->user()->id;
-            // if($candidate->save()){
+                $user->email = $request->email;
+                $user->phone = $request->contact;
+                $user->email_verified_at = Carbon::now();
+                $user->password = bcrypt('testing1234');
+                $user->address = $request->address;
+                $user->dob = $request->dob;
+                $user->type = 'candidate';
+                if (!$user->save()) {
+                    throw new Exception("Something went wrong while creating user");
+                }
+
+                $user->assignRole('candidate');
+
+                // $candidate = new Candidate();
+                // $candidate->firstname = $request->firstname;
+                // $user->lastname =$request->lastname;
+                // if($request->code){
+                //     $candidate->code = $request->code;
+                // }else{
+                //     $candidate->code = Str::random(20);
+                // }
+                // $candidate->status = 'Active';
+                // $candidate->address = $request->address;
+                // $candidate->contact = $request->contact;
+                // $candidate->email = $request->email;
+                // $candidate->dob = $request->dob;
+                // $candidate->user_id = $user->id;
+                // $candidate->employer_id = auth()->user()->id;
+                // if($candidate->save()){
+
+
 
 
                 $companycandidate = new CompanyCandidate();
-                $companycandidate->company_id = $id;
+                $companycandidate->company_id = $company->id;
+                $companycandidate->code = $request->code;
                 // $companycandidate->candidate_id = $candidate->id;
                 $companycandidate->candidate_id = $user->id;
                 $companycandidate->office_hour_start = $request->office_hour_start;
@@ -79,7 +92,7 @@ class CandidateRepository implements CandidateInterface {
                 $companycandidate->status = 'Inactive';
                 $companycandidate->salary_amount = $request->salary_amount;
                 $companycandidate->overtime = $request->overtime;
-                if(!$companycandidate->save()){
+                if (!$companycandidate->save()) {
                     throw new Exception("Something went wrong while storing ccompany candiate");
                 }
 
@@ -94,24 +107,68 @@ class CandidateRepository implements CandidateInterface {
                 // Mail::to($user->email)->send($mail);
                 return true;
 
-            // }
-            // throw new Exception("Something went wrong while storing candidate please try again later");
+                // }
+                // throw new Exception("Something went wrong while storing candidate please try again later");
 
+            } else {
+                $user = User::where('phone', $request->contact)->candidateCheck()->first();
+
+                $user->firstname = $request->name;
+
+                $user->email = $request->email;
+                $user->phone = $request->contact;
+                $user->address = $request->address;
+                $user->dob = $request->dob;
+                $user->email_verified_at = Carbon::now();
+                $user->password = bcrypt('testing1234');
+                $user->type = 'candidate';
+                $user->update();
+
+
+                $companycandidate = CompanyCandidate::updateOrCreate([
+                    'company_id' => $company->id,
+                    'candidate_id' => $user->id,
+                ], [
+                    'code' => $request->code,
+                    'office_hour_start' => $request->office_hour_start,
+                    'office_hour_end' => $request->office_hour_end,
+                    'salary_type' => $request->salary_type,
+                    'duty_time' => $request->duty_time,
+                    'verified_status' => 'not_verified',
+                    'status' => 'Inactive',
+                    'salary_amount' => $request->salary_amount,
+                    'overtime' => $request->overtime,
+                ]);
+
+                // $companycandidate->company_id = $company->id;
+                // // $companycandidate->candidate_id = $candidate->id;
+                // $companycandidate->candidate_id = $user->id;
+                // $companycandidate->office_hour_start = $request->office_hour_start;
+                // $companycandidate->office_hour_end = $request->office_hour_end;
+                // $companycandidate->salary_type = $request->salary_type;
+                // $companycandidate->duty_time = $request->duty_time;
+                // $companycandidate->verified_status = 'not_verified';
+                // $companycandidate->status = 'Inactive';
+                // $companycandidate->salary_amount = $request->salary_amount;
+                // $companycandidate->overtime = $request->overtime;
+                // if (!$companycandidate->save()) {
+                //     throw new Exception("Something went wrong while storing ccompany candiate");
+                // }
+                return true;
+            }
         }
         throw new Exception("Company not found");
     }
 
 
 
-    public function update($request, $id){
-
+    public function update($request, $id)
+    {
     }
 
-    public function getCandidatesByCompany($id){
+    public function getCandidatesByCompany($id)
+    {
         $candidates = Candidate::where('company_id', $id)->get();
         return $candidates;
     }
-
-
-
 }

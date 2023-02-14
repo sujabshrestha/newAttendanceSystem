@@ -5,9 +5,14 @@ namespace Candidate\Http\Controllers\Api;
 use App\GlobalServices\ResponseService;
 use Candidate\Models\Attendance;
 use App\Http\Controllers\Controller;
+use App\Models\CompanyGovernmentleave;
+use App\Models\CompanySpecialleave;
 use Candidate\Models\AttendanceBreak;
+use Candidate\Models\CompanyBusinessleave;
 use Candidate\Models\CompanyCandidate;
 use Carbon\Carbon;
+use DateTime;
+use Employer\Models\Company;
 use Illuminate\Http\Request;
 
 class ApiAttendanceCandidateController extends Controller
@@ -82,25 +87,78 @@ class ApiAttendanceCandidateController extends Controller
     {
         try {
 
+            $weekStartDate = now()->startOfWeek(Carbon::SUNDAY)->format('Y-m-d');
+            $weekEndDate = now()->endOfWeek(Carbon::SATURDAY)->format('Y-m-d');
+
+            $company = Company::where('id', $companyid)->with('businessLeaves')->first();
+            $companyBusinessLeaves = $company->businessLeaves->pluck('title')->toArray();
+            $businessleaveDates = [];
+
+            $currentWeekDateRange = getDatesFromRange($weekStartDate, $weekEndDate);
+
+
+            foreach ($currentWeekDateRange as $date) {
+
+                foreach ($companyBusinessLeaves as $leave) {
+
+                    if (Carbon::parse($date)->format('l') == $leave) {
+                        array_push($businessleaveDates, $date);
+                    }
+                }
+            }
+
+            $govenmentLeaveDates = CompanyGovernmentleave::where('company_id', $companyid)
+                ->whereNotNull('leave_date')
+                ->pluck('leave_date')
+                ->toArray();
+
+            $specialLeaveDates = CompanySpecialleave::where('company_id', $companyid)
+                ->whereNotNull('leave_date')
+                ->pluck('leave_date')
+                ->toArray();
+
+
+            $leaveDates = array_merge($businessleaveDates, $govenmentLeaveDates);
+            $holidays = array_merge($leaveDates, $specialLeaveDates);
+
+
+            $current_date_time = new DateTime("now");
+            $current_date = $current_date_time->format("Y-m-d");
+
+
+            if (in_array($current_date, $leaveDates) == true) {
+                return $this->response->responseError("Today is holiday can't login");
+            }
+
 
             $company = CompanyCandidate::where('company_id', $companyid)
-                ->where('candidate_id', auth()->user()->id)->first();
-
+            ->where('candidate_id', auth()->user()->id)
+            ->first();
 
             if ($company) {
-                $attendance = new Attendance();
                 if (Carbon::parse($company->office_hour_start) > Carbon::now()) {
                     // dd("true");
-                    $attendance->employee_status = "Present";
+                    $employee_status = "Present";
                 } else {
                     // dd("false");
-                    $attendance->employee_status = "Late";
+                    $employee_status = "Late";
                 }
-                $attendance->candidate_id = auth()->user()->id;
-                $attendance->company_id = $companyid;
-                $attendance->start_time = Carbon::now();
 
-                if ($attendance->save()) {
+                $attendance = Attendance::updateOrCreate([
+                    'candidate_id' =>auth()->user()->id,
+                    'company_id' => $companyid,
+                    'created_at' => $current_date
+                ],[
+                    'employee_status' => $employee_status,
+                   'start_time' => Carbon::now()
+                ] );
+                // $attendance = new Attendance();
+
+                // $attendance->candidate_id = auth()->user()->id;
+                // $attendance->company_id = $companyid;
+                // $attendance->start_time = Carbon::now();
+
+                if ($attendance) {
                     $data = [
                         'attendance_id' => $attendance->id
                     ];

@@ -40,8 +40,37 @@ class Company extends Model
         return $this->belongsTo(User::class, 'employer_id');
     }
 
+
+    public function activeCandidates(){
+        return  $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')
+
+        ->withPivot('verified_status','status', 'office_hour_start',
+        'office_hour_end',
+        'salary_type',
+        'salary_amount',
+        'duty_time')
+        ->wherePivot('status','=','Active');
+    }
+
+
+    public function inactiveCandidates(){
+        return  $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')
+
+        ->withPivot('verified_status','status', 'office_hour_start',
+        'office_hour_end',
+        'salary_type',
+        'salary_amount',
+        'duty_time')
+        ->wherePivot('status','=','Inactive');
+    }
+
     public function candidates(){
-        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id');
+        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')
+        ->withPivot('verified_status','status',  'office_hour_start',
+        'office_hour_end',
+        'salary_type',
+        'salary_amount',
+        'duty_time');;
     }
 
 

@@ -96,13 +96,13 @@ class AuthEmployerRepository implements AuthEmployerInterface
                 $employer->user_id = $user->id;
 
                 if ($employer->save()) {
-                    $message = "Please verify using otp: " . $user->otp->otp;
-                    $sendSms =  $this->sendSms($user->phone, $message);
-                    if ($sendSms) {
+                    // $message = "Please verify using otp: " . $user->otp->otp;
+                    // $sendSms =  $this->sendSms($user->phone, $message);
+                    // if ($sendSms) {
                     return [
                         'otp' => $user->otp->otp
                     ];
-                    }
+                    // }
                 }
                 throw new Exception("Something went wrong");
             }
@@ -120,9 +120,9 @@ class AuthEmployerRepository implements AuthEmployerInterface
             $otp = $user->otp->otp;
         }
 
-        $message = "Please verify using otp: " . $otp;
-        $sendSms =  $this->sendSms($user->phone, $message);
-        if ($sendSms) {
+        // $message = "Please verify using otp: " . $otp;
+        // $sendSms =  $this->sendSms($user->phone, $message);
+        // if ($sendSms) {
 
 
 
@@ -130,7 +130,7 @@ class AuthEmployerRepository implements AuthEmployerInterface
                 'otp' => $otp,
                 'token' => $token
             ];
-        }
+        // }
     }
 
 
@@ -192,9 +192,7 @@ class AuthEmployerRepository implements AuthEmployerInterface
         ];
 
         if (!auth()->attempt($data)) {
-
-            throw new Exception('Incorrect Details.
-            Please try again');
+            throw new Exception('Incorrect Details.Please try again');
         }
 
         $token = auth()->user()->createToken('API Token')->accessToken;

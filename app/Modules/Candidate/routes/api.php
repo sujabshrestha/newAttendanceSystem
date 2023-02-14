@@ -24,7 +24,6 @@ Route::group([
 
         Route::post('profile-update', 'ApiCandidateAuthController@profileUpdate')->name('profileUpdate');
 
-
         Route::post('attendance-store/{company_id}', 'ApiAttendanceCandidateController@attendanceStore');
 
         Route::post('attendance-update/{company_id?}/{attendance_id?}', 'ApiAttendanceCandidateController@attendanceUpdate');
@@ -81,6 +80,12 @@ Route::group([
 
         Route::post('change-phonenumber', 'ApiCandidateAuthController@changePhone')->name('changePhone');
 
+        //unread notifications
+        Route::get('notifications','ApiCandidateNotificationController@notifications');
+
+
+        Route::get('/mark-notification-read', 'ApiCandidateNotificationController@markNotificationRead')->name('markNotificationRead');
+        Route::get('/mark-singlenotification-read/{id}', 'ApiCandidateNotificationController@markSingleNotificationRead')->name('markSingleNotificationRead');
 
 
 

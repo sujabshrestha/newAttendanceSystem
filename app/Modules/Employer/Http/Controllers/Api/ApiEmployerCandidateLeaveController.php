@@ -71,6 +71,7 @@ class ApiEmployerCandidateLeaveController extends Controller
             // $startDate = Carbon::createFromFormat('Y-m-d', $leave->start_date);
             // $endDate = Carbon::createFromFormat('Y-m-d', $leave->end_date);
             // dd($startDate, $endDate);
+
             if($leave){
                 $leave->approved = 1;
                 if($leave->update() == true){

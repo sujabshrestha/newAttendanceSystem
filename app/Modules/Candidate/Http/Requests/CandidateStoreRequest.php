@@ -28,10 +28,11 @@ class CandidateStoreRequest extends FormRequest
         return [
 
             'address' => 'required',
-            'contact' => 'required|unique:users,phone',
-            'email' => 'required|unique:users,email',
-            'office_hour_start' => 'required',
-            'office_hour_end' => 'required',
+            'contact' => 'required',
+            'email' => 'required',
+
+            'office_hour_start' => 'required|date_format:H:i|before:office_hour_end',
+            'office_hour_end' => 'required|date_format:H:i|after:office_hour_start',
             'salary_type' => 'required',
             'duty_time' => 'required',
             'dob' => 'required',

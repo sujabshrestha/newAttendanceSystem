@@ -36,7 +36,7 @@ class ApiAttendanceController extends Controller
     public function currentDayAttendance($company_id)
     {
         try{
-            dd($company_id);
+            // dd($company_id);
             $user = Auth::user();
             $company_id = $user->company_id;
             $attendaces = Attendance::where('company_id',$company_id)
