@@ -4,7 +4,7 @@ namespace SuperAdmin\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class LeaveTypeRequest extends FormRequest
+class LeaveTypeStoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +25,7 @@ class LeaveTypeRequest extends FormRequest
     {
         return [
             'title' => 'required|max:255',
-            'status' =>  'required|in:Active,Inactive'
+            'status' => 'required|in:Active,Inactive'
     
         ];
     }
