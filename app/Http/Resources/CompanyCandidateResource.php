@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class CompanyCandidateResource extends JsonResource
@@ -21,6 +22,9 @@ class CompanyCandidateResource extends JsonResource
             'candidate_id' => $this->candidaite_id,
             'canidate_id' => $this->candidate->firstname,
             'attendance' =>  $this->checkAttendanceToday($this),
+            // 'break' => $this->checkAttendanceBreak($this),
+            // 'attendanceTime' =>$this->checkAttendanceTime($this),
+
         ];
     }
 
@@ -35,4 +39,35 @@ class CompanyCandidateResource extends JsonResource
         return "absent";
 
     }
+
+    // private function checkAttendanceBreak($data)
+    // {
+
+    //     $attendance = $data->candidate->attendances->first();
+    //     if( $attendance){
+    //         return $attendance->break;
+    //     }
+    //     return "absent";
+
+    // }
+
+    // private function checkAttendanceTime($data)
+    // {
+    //     $attendance = $data->candidate->attendances->where('created_at',Carbon::today())->first();
+    //     if($attendance){
+    //         $result = Carbon::parse("00:00:00");
+    //         $to = Carbon::parse($attendance->end_time);
+    //         $from = Carbon::parse($attendance->start_time);
+    //         $diff_in_hours = $to->diff($from)->format('%h:%i:%s');
+    //         $hms = explode(':',$diff_in_hours);
+    //         $result = $result->copy()->addHours($hms[0])->addMinutes($hms[1])->addSeconds($hms[2]);
+    //         return $result;
+    //     }
+    //     return "absent";
+
+    // }
+
+
+
+  
 }

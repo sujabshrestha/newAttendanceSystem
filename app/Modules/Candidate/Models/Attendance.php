@@ -30,6 +30,19 @@ class Attendance extends Model
         }
         return 0;
     }
+
+
+    public function getAttendanceTimeAttribute(){
+        $result = Carbon::parse("00:00:00");
+        $to = Carbon::parse($this->end_time);
+        $from = Carbon::parse($this->start_time);
+        $diff_in_hours = $to->diff($from)->format('%h:%i:%s');
+        $hms = explode(':',$diff_in_hours);
+        $result = $result->copy()->addHours($hms[0])->addMinutes($hms[1])->addSeconds($hms[2]);
+        return $result;
+    }
+
+    
     protected $fillable = [
         'candidate_id',
         'leave_type_id',

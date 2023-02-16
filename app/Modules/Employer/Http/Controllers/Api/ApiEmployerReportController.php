@@ -119,7 +119,7 @@ class ApiEmployerReportController extends Controller
     public function weeklyReport($companyid, $candidate_id)
     {
         try {
-
+                // dd('asdhkj');
             $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
             $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
             $attendanceData = DB::table('attendances')
