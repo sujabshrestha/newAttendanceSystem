@@ -10,6 +10,8 @@ use Candidate\Http\Resources\CandidateResource;
 use Candidate\Models\Attendance;
 use Candidate\Models\CompanyCandidate;
 use Carbon\Carbon;
+use Employer\Http\Resources\AttendanceResource;
+use Employer\Http\Resources\DailyAttendanceReportResource;
 use Employer\Models\Company;
 use Employer\Models\Payment;
 use Exception;
@@ -116,6 +118,161 @@ class ApiEmployerReportController extends Controller
         return $numberOfFullWeeks;
     }
 
+
+    public function dailyReport($companyid, $candidate_id)
+    {
+        try {
+            $todayDate = Carbon::today();
+            $result = Carbon::parse("00:00:00");
+            $breakresult = Carbon::parse("00:00:00");
+
+            $attendanceData = Attendance::whereDate('created_at',$todayDate)
+                                    ->where('company_id',$companyid)
+                                    ->where('candidate_id',$candidate_id)
+                                    ->first();
+
+            if($attendanceData ){
+                // $to = Carbon::parse($attendanceData->end_time);
+                // $from = Carbon::parse($attendanceData->start_time);
+                // $diff_in_hours = $to->diff($from)->format('%h:%i:%s');
+                // $hms = explode(':',$diff_in_hours);
+                // $result = $result->copy()->addHours($hms[0])->addMinutes($hms[1])->addSeconds($hms[2]);
+
+                // $datas = $attendanceData->breaks;
+                // if($datas->count() > 0){
+                //     foreach($datas as $data){
+                //         $to = Carbon::parse($data->end_time);
+                //         $from = Carbon::parse($data->start_time);
+                //         $diff_in_hours = $to->diff($from)->format('%h:%i:%s');
+                //         $hms = explode(':',$diff_in_hours);
+                //         $breakresult = $breakresult->copy()->addHours($hms[0])->addMinutes($hms[1])->addSeconds($hms[2]);
+                //     }
+                //     $breakresult->format('h:i:s');
+                // }
+                // $breakresult = Carbon::parse("00:00:00");
+
+               
+                // return $result;
+                $data = [
+                    'attendance' => new DailyAttendanceReportResource($attendanceData),
+                ];
+               
+            } 
+
+
+            // return $this->response->responseSuccess($data, "Succcess", 200);
+
+
+            
+            // DB::table('attendances')
+            //     ->join('company_specialleaves', function ($join) use ($weekStart, $weekEnd) {
+            //         $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
+            //             ->whereBetween('company_specialleaves.leave_date', [$weekStart, $weekEnd]);
+            //     })
+            //     ->join('company_governmentleaves', function ($join) use ($weekStart, $weekEnd) {
+            //         $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
+            //             ->whereBetween('company_governmentleaves.leave_date', [$weekStart, $weekEnd]);
+            //     })
+            //     ->join('company_businessleaves', function ($join) {
+            //         $join->on('attendances.company_id', '=', 'company_businessleaves.company_id');
+            //     })
+
+            //     ->where('attendances.candidate_id', '=', $candidate_id)
+            //     ->where('attendances.company_id', '=', $companyid)
+
+            //     ->select(
+            //         DB::raw("Date(attendances.created_at) as attendance_day"),
+            //         'attendances.employee_status',
+            //         DB::raw("Date(company_specialleaves.leave_date) as special_date"),
+            //         DB::raw("Date(company_governmentleaves.leave_date) as goverment_date"),
+            //         DB::raw("(company_businessleaves.business_leave_id - 1) as business_date")
+            //     )
+            //     ->get();
+            // dd($attendanceData);
+            // $reportData = [];
+            // for ($i = 0; $i <= 6; $i++) {
+            //     $day = $weekStart->copy()->addDays($i);
+            //     // dd($day);
+
+            //     $reportData[$day->format('Y-m-d')] = 'Absent';
+            //     foreach ($attendanceData as $data) {
+            //         // dd($day->format('w'));
+            //         // dd($data->business_date);
+            //         if ($day->format('Y-m-d') == $data->attendance_day) {
+            //             $reportData[$day->format('Y-m-d')] = $data->employee_status;
+            //         } elseif ($day->format('Y-m-d') == $data->special_date) {
+            //             $reportData[$day->format('Y-m-d')] = 'Special Holiday';
+            //         } elseif ($day->format('Y-m-d') == $data->goverment_date) {
+            //             $reportData[$day->format('Y-m-d')] = 'Government Holiday';
+            //         } elseif ($day->format('w') == $data->business_date) {
+            //             // dd('sadsad');
+
+            //             $reportData[$day->format('Y-m-d')] = 'Business Holiday';
+            //         }
+            //     }
+            // }
+
+            // dd($reportData);
+            // $reportDataCollection = collect($reportData);
+
+            // $absentdates = array_filter($reportData, function ($var) {
+            //     return ($var == "Absent");
+            // });
+
+            // foreach ($absentdates as $key => $value) {
+            //     $attendance = Attendance::updateOrCreate([
+            //         'candidate_id' => $candidate_id,
+            //         'company_id' => $companyid,
+            //         'created_at' => Carbon::parse($key)
+            //     ], [
+            //         'employee_status' => "Absent"
+            //     ]);
+            // }
+
+            // $counts = array_count_values($reportData);
+
+            // $presentCount = $counts['Present'] ?? 0;
+            // $absentCount = $counts['Absent'] ?? 0;
+            // $leaveCount = $counts['leave'] ?? 0;
+            // $businessleaveCount = $counts['Business Holiday'] ?? 0;
+            // $governmentleaveCount = $counts['Government Holiday'] ?? 0;
+            // $specialleaveCount = $counts['Special Holiday'] ?? 0;
+
+            // // dd($reportDataCollection->where())
+
+            // $companyCandidate = CompanyCandidate::where('company_id', $companyid)
+            //     ->where('candidate_id', $candidate_id)->first();
+            // $candidateMonthlySalary = $companyCandidate->salary_amount;
+
+            // $numberOfDaysInMonth = Carbon::now()->daysInMonth;
+            // $weekInCurrentMonth = (int) $this->weeksInMonth($numberOfDaysInMonth);
+
+            // $daysInCurrentMonth = (int) Carbon::parse(today())->daysInMonth;
+
+            // $salaryInWeek = (float)$candidateMonthlySalary / $weekInCurrentMonth;
+            // $salaryPerDay = (float)$candidateMonthlySalary / $daysInCurrentMonth;
+
+            // $salaryCountingdays = 7 - $absentCount;
+
+            // $currentweekSalary = floor($salaryCountingdays * $salaryPerDay);
+            // $data = [
+            //     'present' =>  $presentCount ?? 0,
+            //     'absent' => $absentcount ?? 0,
+            //     'leave' => $leaveCount ?? 0,
+            //     'weekdata ' =>  $reportDataCollection  ?? [],
+            //     'businessleaveCount' => $businessleaveCount ?? 0,
+            //     'governmentLeaveCount' => $governmentleaveCount ?? 0,
+            //     'specialLeaveCount' => $specialleaveCount ?? 0,
+            //     'current_week_salary' => $currentweekSalary
+            // ];
+
+            return $this->response->responseSuccess($data, "Success", 200);
+        } catch (Exception  $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
     public function weeklyReport($companyid, $candidate_id)
     {
         try {
@@ -170,7 +327,7 @@ class ApiEmployerReportController extends Controller
                 }
             }
 
-            // dd($reportData);
+            dd($reportData);
             $reportDataCollection = collect($reportData);
 
             $absentdates = array_filter($reportData, function ($var) {
@@ -217,7 +374,7 @@ class ApiEmployerReportController extends Controller
                 'present' =>  $presentCount ?? 0,
                 'absent' => $absentcount ?? 0,
                 'leave' => $leaveCount ?? 0,
-                'weekdata ' =>  $reportDataCollection   ?? [],
+                'weekdata ' =>  $reportDataCollection  ?? [],
                 'businessleaveCount' => $businessleaveCount ?? 0,
                 'governmentLeaveCount' => $governmentleaveCount ?? 0,
                 'specialLeaveCount' => $specialleaveCount ?? 0,

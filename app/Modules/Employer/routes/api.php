@@ -120,6 +120,9 @@ Route::group([
 
             Route::get('today/inactive-candidate/{companyid}','ApiEmployerReportController@inactiveCompanyCandidates');
 
+
+            Route::get('daily-report/{company_id}/{candidate_id}','ApiEmployerReportController@dailyReport');
+
             Route::get('weekly-report/{company_id}/{candidate_id}','ApiEmployerReportController@weeklyReport');
 
             Route::get('monthly-report/{company_id}/{candidate_id}/{month?}','ApiEmployerReportController@monthlyReport');
