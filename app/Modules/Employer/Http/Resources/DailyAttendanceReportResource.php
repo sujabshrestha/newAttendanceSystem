@@ -20,7 +20,12 @@ class DailyAttendanceReportResource extends JsonResource
             'attendance_duration' => $this->attendance_duration ?? 0,
             'break_duration' => $this->break_duration ?? 0,
             'employee_status' => $this->employee_status,
+            'earning' =>$this->earning,
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
+            // 'leave_type_id' => new LeavetypeResource($this->whenLoaded('candidate')),
             'candidate' => new CandidateResource($this->whenLoaded('candidate')),
+
          ];
     }
 }
