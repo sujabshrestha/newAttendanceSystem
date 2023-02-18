@@ -56,7 +56,6 @@ class ApiCandidateController extends Controller
     public function getCandidatesByCompany($id)
     {
         try {
-            // dd("fkldsahjkfds");
 
             $company = Company::where('id', $id)->with(['candidatesByCompanyID'])->whereHas('candidatesByCompanyID', function($q)use($id){
                 $q->where('company_id', $id);
@@ -67,14 +66,15 @@ class ApiCandidateController extends Controller
             //     $q->where('company_id', $id);
             // })->get();
 
-            // dd($company);
             // dd($candidates);
-            if ($company->candidatesByCompanyID->isNotEmpty()) {
-                $data = [
-                    'candidate' => CandidateResource::collection($company->candidatesByCompanyID)
-                ];
-                return $this->response->responseSuccess($data, "Successfully Created", 200);
+            if ($company && $company->candidatesByCompanyID->isNotEmpty()) {
+               $candidates = CandidateResource::collection($company->candidatesByCompanyID);
             }
+
+            $data = [
+                'candidate' => $candidates??[]
+            ];
+            return $this->response->responseSuccess($data, "Successfully Fetchs", 200);
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }

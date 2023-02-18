@@ -33,8 +33,9 @@ class ApiCandidateInvitationController extends Controller
 
 
             $user_id = Auth()->id();
-            $invitations = Invitation::where('candidate_id',$user_id)
+            $invitations = Invitation::where('candidate_id',$user_id)->where('status','Not-Approved')
                             ->with('company','employer')->latest()->get();
+
             if($invitations){
                 $data = [
                     'candidateInvitations' => CandidateInvitationResource::collection($invitations)

@@ -21,18 +21,18 @@ class CandidateResource extends JsonResource
             'id' => $this->id,
             // 'user_id' => $this->user_id,
             'name' => $this->firstname,
-            'code' => $this->pivot->code ?? "",
+            // 'code' => $this->pivot->code ?? "",
 
             'contact' => $this->phone,
             'email' => $this->email,
             'address' => $this->address,
             'joining_date' => Carbon::parse($this->joining_date),
 
-            'office_hour_start' => $this->pivot->office_hour_start ?? "",
-            'office_hour_end' => $this->pivot->office_hour_end ?? "",
-            'status' => $this->pivot->status ?? "",
-            'salary_type' => $this->pivot->salary_type ?? "",
-            'salary_amount' => $this->pivot->salary_amount ?? "",
+            // 'office_hour_start' => $this->pivot->office_hour_start ?? "",
+            // 'office_hour_end' => $this->pivot->office_hour_end ?? "",
+            // 'status' => $this->pivot->status ?? "",
+            // 'salary_type' => $this->pivot->salary_type ?? "",
+            // 'salary_amount' => $this->pivot->salary_amount ?? "",
             'companies' => CompanyResource::collection($this->whenLoaded('companies')),
             'employer' => new EmployerResource($this->whenLoaded('employer'))
 

@@ -39,6 +39,7 @@ class CandidateRepository implements CandidateInterface
         if ($company) {
 
 
+
             $user = User::where('phone', $request->contact)->candidateCheck()->first();
             if (!$user) {
                 // dd("false");
@@ -56,8 +57,9 @@ class CandidateRepository implements CandidateInterface
                 if (!$user->save()) {
                     throw new Exception("Something went wrong while creating user");
                 }
-
                 $user->assignRole('candidate');
+
+
 
                 // $candidate = new Candidate();
                 // $candidate->firstname = $request->firstname;
@@ -115,6 +117,7 @@ class CandidateRepository implements CandidateInterface
 
                 $user->firstname = $request->name;
 
+                 
                 $user->email = $request->email;
                 $user->phone = $request->contact;
                 $user->address = $request->address;

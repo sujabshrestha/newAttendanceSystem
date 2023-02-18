@@ -94,7 +94,7 @@ class User extends Authenticatable
 
     public function receivedCompanyInvitation(){
         $user = Auth::user();
-        return $this->hasMany(Invitation::class,'candidate_id','id')->where('company_id', $user->employerCompany->id);
+        return $this->hasMany(Invitation::class,'candidate_id', 'id')->where('company_id', $user->employerCompany->id);
     }
 
 
