@@ -2,6 +2,7 @@
 
 namespace Candidate\Models;
 
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,10 @@ class CompanyCandidate extends Model
         'salary_amount',
         'salary_type',
         'overtime',
+        'designation',
+        'joining_date',
+        'duty_time',
+        'allow_late_attendance'
 
     ];
 
@@ -34,6 +39,13 @@ class CompanyCandidate extends Model
 
     public function candidate(){
         return $this->belongsTo(User::class, 'candidate_id');
+    }
+
+
+
+
+    public function invitation(){
+        return $this->belongsTo(Invitation::class, 'invitation_id');
     }
 
 

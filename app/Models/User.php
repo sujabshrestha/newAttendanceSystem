@@ -6,6 +6,7 @@ use Candidate\Models\Attendance;
 use Candidate\Models\Candidate;
 use Candidate\Models\CompanyCandidate;
 use Candidate\Models\Leave;
+use Carbon\Carbon;
 use Employer\Models\Company;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -47,7 +48,7 @@ class User extends Authenticatable
     public function scopeCandidateCheck($q){
         return $q->where('type', 'candidate');
     }
- 
+
 
     // Relationships
     public function employerCompany(){
@@ -82,7 +83,10 @@ class User extends Authenticatable
 
     public function receivedCompanyInvitation(){
         $user = Auth::user();
-        return $this->hasMany(Invitation::class,'candidate_id','id')->where('company_id', $user->employerCompany->id);
+
+        // dd($user->employerCompany);
+        return $this->hasMany(Invitation::class,'candidate_id','id')->where('company_id', 1)
+        ->where('employer_id', $user->id);
     }
 
 
@@ -92,9 +96,19 @@ class User extends Authenticatable
     }
 
     public function candidateCompanies(){
-        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id');
+        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id')
+        ->withPivot('code','office_hour_start',
+        'office_hour_end', 'status','duty_time', 'salary_amount',
+        'salary_type','overtime');
     }
 
+
+    public function activecandidateCompanies(){
+        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id')
+        ->withPivot('code','office_hour_start',
+        'office_hour_end', 'status','duty_time', 'salary_amount',
+        'salary_type','overtime')->wherePivot('status', 'Active');
+    }
 
 
     public function userCompanies(){
@@ -119,5 +133,35 @@ class User extends Authenticatable
     public function attendances(){
         return $this->hasMany(Attendance::class,'candidate_id','id');
     }
+
+
+    public function todayattendances(){
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereDate('created_at', '=', today());
+    }
+
+
+
+    public function weeklyattendances(){
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereBetween('created_at', [$weekStart, $weekEnd]);
+    }
+
+
+    public function monthlyattendances(){
+        $month = today()->format('m');
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereMonth('created_at', $month);
+    }
+
+
+    public function yearlyattendances(){
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereYear('created_at', today()->format('y'));
+    }
+
+
 
 }

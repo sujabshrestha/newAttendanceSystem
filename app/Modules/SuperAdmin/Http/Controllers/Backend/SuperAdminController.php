@@ -29,7 +29,7 @@ class SuperAdminController extends Controller
             // $companiesCount =  Company::count();
 
             $candidatesCount= User::candidateCheck()->count();
-            $employersCount= User::employers()->count();
+            $employersCount= 1;
             return view('SuperAdmin::backend.dashboard',compact('companiesCount','latestCompanies','employersCount','candidatesCount'));
         }catch (\Exception $e) {
             Toastr::error($e->getMessage());
@@ -47,8 +47,8 @@ class SuperAdminController extends Controller
         }
     }
 
-    
 
-   
-   
+
+
+
 }

@@ -9,9 +9,13 @@ use App\Http\Resources\AllCandidateInvitationResource;
 use App\Http\Resources\UserResource;
 use App\Models\Invitation;
 use App\Models\User;
+use Candidate\Http\Resources\CandidateInvitationResource;
 use Candidate\Http\Resources\CandidateResource;
+use Candidate\Models\CompanyCandidate;
+use Employer\Http\Resources\CompanyCandidateResource;
 use Employer\Http\Resources\InvitationResource;
 use Employer\Http\Resources\LeavetypeResource;
+use Employer\Models\Company;
 use Employer\Models\LeaveType;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,49 +27,67 @@ class ApiInvitationController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-     protected $response;
-     public function __construct(ResponseService $response)
-     {
+    protected $response;
+    public function __construct(ResponseService $response)
+    {
 
-         $this->response = $response;
-     }
+        $this->response = $response;
+    }
 
 
     public function index($company_id)
     {
-        try{
+        try {
             $user = Auth::user();
-            $invitations = Invitation::where('company_id',$company_id)
-                            ->with('candidate')
-                            ->latest()->get();
+            $invitations = Invitation::where('company_id', $company_id)
+                ->with('candidate')
+                ->latest()->get();
             // $invitations = LeaveType::where('company_id',$company_id)->latest()->get();
             $data = [
                 'invitations' => InvitationResource::collection($invitations)
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
-
-
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
     }
 
     public function allCandidates($company_id)
     {
-        try{    
-            $user = Auth::user();
+        try {
 
-            $users = User::where('type','candidate')
-                            ->whereDoesntHave('receivedCompanyInvitation')
-                            ->latest()->get();
 
-            $data = [
-                'users' => AllCandidateInvitationResource::collection($users),
+            $user_id = Auth()->id();
+            $company = Company::where('id', $company_id)->first();
+            if ($company) {
 
-            ];
-            return $this->response->responseSuccess($data, "Success", 200);
-        }catch(\Exception $e){
+
+                $invitationCandidates = CompanyCandidate::where('company_id', $company_id)
+                ->where(function($q){
+                    $q->where('verified_status', 'not_verified')
+                    ->orWhere('status', 'Inactive');
+                })->get();
+
+
+
+                if ($invitationCandidates ) {
+                    $candidates = CompanyCandidateResource::collection($invitationCandidates);
+                }
+                $data = [
+                    'candidates' => $candidates ?? []
+                ];
+                return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
+
+            }
+
+
+            return $this->response->responseError("Company doesn't exists");
+
+
+            // dd($companyinvitation);
+
+        } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
     }
@@ -73,23 +95,30 @@ class ApiInvitationController extends Controller
 
 
 
-    public function store(Request $request,$company_id)
+    public function store(Request $request, $company_id)
     {
-        try{
-            // dd($request->all());
+        try {
             $user = Auth()->user();
             $invitation = new Invitation();
-            $invitation->employer_id =$user->id;
-            $invitation->candidate_id =$request->candidate_id;
-            $invitation->status =$request->status;
+            $invitation->employer_id = $user->id;
+            $invitation->candidate_id = $request->candidate_id;
+            $invitation->status = $request->status;
             $invitation->company_id = $company_id;
 
-            if($invitation->save() == true){
+            if ($invitation->save() == true) {
+                CompanyCandidate::updateOrCreate([
+                    'company_id' => $company_id,
+                    'candidate_id' => $request->candidate_id
+                ], [
+                    'invitation_id' => $invitation->id
+                ]);
+
+
+
                 return $this->response->responseSuccessMsg("Successfully Created", 200);
             }
             return $this->response->responseError("Something Went Wrong While Saving. Please Try Again.");
-
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
     }
@@ -103,45 +132,41 @@ class ApiInvitationController extends Controller
 
     public function edit($id)
     {
-
     }
 
 
-    public function update(Request $request,$company_id ,$invitation_id)
+    public function update(Request $request, $company_id, $invitation_id)
     {
-        try{
+        try {
             $user_id = Auth()->id();
-            $invitation = Invitation::where('company_id',$company_id)->where('id',$invitation_id)->first();
-            if($invitation){
-                $invitation->employer_id =$user_id;
-                $invitation->candidate_id =$request->candidate_id;
-                $invitation->status =$request->status;
+            $invitation = Invitation::where('company_id', $company_id)->where('id', $invitation_id)->first();
+            if ($invitation) {
+                $invitation->employer_id = $user_id;
+                $invitation->candidate_id = $request->candidate_id;
+                $invitation->status = $request->status;
                 $invitation->company_id = $company_id;
-                if($invitation->update() == true){
+                if ($invitation->update() == true) {
                     return $this->response->responseSuccessMsg("Successfully Updated", 200);
                 }
                 return $this->response->responseError("Something Went Wrong While Updating. Please Try Again.");
             }
-            return $this->response->responseError("Invitation Type Not Found",404);
-
-        }catch(\Exception $e){
+            return $this->response->responseError("Invitation Type Not Found", 404);
+        } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
-
-
     }
 
 
-    public function destroy($company_id,$invitation_id)
+    public function destroy($company_id, $invitation_id)
     {
-        try{
-            $invitation = Invitation::where('company_id',$company_id)->where('id',$invitation_id)->first();
-            if($invitation){
+        try {
+            $invitation = Invitation::where('company_id', $company_id)->where('id', $invitation_id)->first();
+            if ($invitation) {
                 $invitation->delete();
                 return $this->response->responseSuccessMsg("Successfully Deleted", 200);
             }
-            return $this->response->responseError("Invitation Record Not Found",404);
-        }catch(\Exception $e){
+            return $this->response->responseError("Invitation Record Not Found", 404);
+        } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
     }

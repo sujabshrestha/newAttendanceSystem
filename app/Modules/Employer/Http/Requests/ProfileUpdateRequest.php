@@ -26,11 +26,11 @@ class ProfileUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'firstname' => 'required',
-            'lastname' => 'required',
+            // 'firstname' => 'required',
+            // 'lastname' => 'required',
             'email' => 'required|email',
-            'dob' => 'required',
-            'uploadfile' => 'image|mimes:jpeg,jpg,png,gif|max:2048'
+            // 'dob' => 'required',
+            // 'uploadfile' => 'image|mimes:jpeg,jpg,png,gif|max:2048'
 
         ];
     }

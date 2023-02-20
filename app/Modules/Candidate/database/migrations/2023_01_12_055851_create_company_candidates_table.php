@@ -22,11 +22,18 @@ class CreateCompanyCandidatesTable extends Migration
             $table->enum('status', ['Active', 'Inactive'])->defaul('Inactive');
             $table->time('office_hour_start')->nullable();
             $table->string('code')->unique()->nullable();
+
+            $table->string('designation')->nullable();
+
+            $table->date('joining_date')->nullable();
+
+            $table->unsignedDouble('allow_late_attendance')->nullable();
+
             $table->time('office_hour_end')->nullable();
             $table->string('duty_time')->nullable();
             $table->string('salary_amount')->nullable();
             $table->enum('salary_type', ['monthly', 'weekly', 'daily']);
-            $table->unsignedDouble('overtime')->nullable();
+            $table->unsignedDouble('overtime',2,2)->nullable();
             $table->timestamps();
         });
     }

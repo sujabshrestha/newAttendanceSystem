@@ -29,8 +29,11 @@ class ApiEmployerCandidateLeaveController extends Controller
 
             $leaves = Leave::where('company_id', $companyid)->with(['candidate','LeaveType'])->get();
 
+            if($leaves){
+                $candidates = EmployerCandidateLeaveResource::collection($leaves);
+            }
             $data = [
-                'candidates' =>EmployerCandidateLeaveResource::collection($leaves)
+                'candidates' => $candidates ?? []
             ];
             return $this->response->responseSuccess($data, "Succcess", 200);
 
@@ -46,8 +49,11 @@ class ApiEmployerCandidateLeaveController extends Controller
         try{
             $user = auth()->user();
             $leave = Leave::where('id', $id)->with(['candidate','LeaveType'])->first();
+            if($leave){
+                $leavedetail = new EmployerCandidateLeaveDetailsResource($leave);
+            }
             $data = [
-                'leavedetail' => new EmployerCandidateLeaveDetailsResource($leave)
+                'leavedetail' => $leavedetail ?? null
             ];
             return $this->response->responseSuccess($data, "Succcess", 200);
         }catch(\Exception $e){

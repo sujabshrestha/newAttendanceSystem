@@ -10,6 +10,8 @@ use App\Models\User;
 use Candidate\Http\Requests\CandidateStoreRequest;
 
 use Candidate\Http\Resources\CandidateResource;
+use Candidate\Models\CompanyCandidate;
+use Employer\Http\Resources\CompanyCandidateResource;
 use Employer\Repositories\candidate\CandidateInterface;
 use Employer\Http\Resources\CompanyResource;
 use Employer\Models\Company;
@@ -23,7 +25,6 @@ class ApiCandidateController extends Controller
     {
         $this->response = $response;
         $this->candidate = $candidate;
-
     }
 
     public function store(CandidateStoreRequest $request, $id)
@@ -53,28 +54,71 @@ class ApiCandidateController extends Controller
     }
 
 
+    public function getActiveCandidatesByCompany($id)
+    {
+        try {
+            $company = Company::where('id', $id)
+                ->with(['activecandidatesByCompanyID'])
+                ->whereHas('activecandidatesByCompanyID', function ($q) use ($id) {
+                    $q->where('company_id', $id);
+                })
+                ->first();
+            if ($company) {
+                $data = [
+                    'candidates' => (isset($company) && $company->activecandidatesByCompanyID->isNotEmpty()) ?
+                     CandidateResource::collection($company->activecandidatesByCompanyID) : []
+                ];
+                return $this->response->responseSuccess($data, "Success", 200);
+            }
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
+
+    public function getInActiveCandidatesByCompany($id)
+    {
+        try {
+            $company = Company::where('id', $id)
+                ->with(['inactiveCandidates'])
+                ->whereHas('inactiveCandidates', function ($q) use ($id) {
+                    $q->where('company_id', $id);
+                })
+                ->first();
+
+            $data = [
+                'candidates' => (isset($company)  && $company->inactivecandidatesByCompanyID->isNotEmpty()) ?  CandidateResource::collection($company->activecandidatesByCompanyID) : []
+            ];
+            return $this->response->responseSuccess($data, "Success", 200);
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
     public function getCandidatesByCompany($id)
     {
         try {
             // dd("fkldsahjkfds");
+            $companycandidate = CompanyCandidate::where('company_id', $id)
+            ->with('candidate')
+            ->whereNotNull('invitation_id')
+            ->where('verified_status', 'verified')
+            // ->where('employer_id', auth()->user()->id)
+            ->get();
 
-            $company = Company::where('id', $id)->with(['candidatesByCompanyID'])->whereHas('candidatesByCompanyID', function($q)use($id){
-                $q->where('company_id', $id);
-            })->first();
 
-            // dd($company);
-            // $candidates = User::with(['companyCandidate'])->whereHas('companyCandidate',  function ($q) use ($id) {
-            //     $q->where('company_id', $id);
-            // })->get();
+            if ($companycandidate) {
 
-            // dd($company);
-            // dd($candidates);
-            if ($company->candidatesByCompanyID->isNotEmpty()) {
-                $data = [
-                    'candidate' => CandidateResource::collection($company->candidatesByCompanyID)
-                ];
-                return $this->response->responseSuccess($data, "Successfully Created", 200);
+                $candidates = CompanyCandidateResource::collection($companycandidate);
+
             }
+
+            $data = [
+                'candidate' => $candidates ?? []
+            ];
+            return $this->response->responseSuccess($data, "Successfully fetched", 200);
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }

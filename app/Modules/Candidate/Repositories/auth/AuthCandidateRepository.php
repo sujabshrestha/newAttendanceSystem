@@ -94,13 +94,13 @@ class AuthCandidateRepository implements AuthCandidateInterface
                     'otp' => rand(0000, 9999)
                 ]);
 
-                // $message= "Please verify using otp: ".$user->otp->otp;
-                // $sendSms =  $this->sendSms($user->phone, $message);
-                // if($sendSms){
+                $message= "Please verify using otp: ".$user->otp->otp;
+                $sendSms =  $this->sendSms($user->phone, $message);
+                if($sendSms){
                 return [
                     'otp' => $user->otp->otp
                 ];
-                // }
+                }
 
             }
             throw new Exception("Something went wrong while creating candidate");
@@ -118,9 +118,9 @@ class AuthCandidateRepository implements AuthCandidateInterface
             $otp = $user->otp->otp;
         }
 
-        // $message = "Please verify using otp: " . $otp;
-        // $sendSms =  $this->sendSms($user->phone, $message);
-        // if ($sendSms) {
+        $message = "Please verify using otp: " . $otp;
+        $sendSms =  $this->sendSms($user->phone, $message);
+        if ($sendSms) {
 
 
 
@@ -128,7 +128,7 @@ class AuthCandidateRepository implements AuthCandidateInterface
             'otp' => $otp,
             'token' => $token
         ];
-        // }
+        }
 
 
 

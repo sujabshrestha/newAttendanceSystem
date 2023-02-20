@@ -6,6 +6,7 @@ use App\GlobalServices\ResponseService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CompanyCandidateResource;
+use App\Http\Resources\YearlyEarningResource;
 use Candidate\Http\Resources\CandidateResource;
 use Candidate\Models\Attendance;
 use Candidate\Models\CompanyCandidate;
@@ -30,15 +31,70 @@ class ApiEmployerReportController extends Controller
     {
         try {
 
-            $companyCandidate = CompanyCandidate::where('company_id', $id)
-            ->with(['candidate'
-            => function($q){
-                $q->with(['attendances' => function($q){
-                    $q->whereDate('created_at', today())
-                    ->where('employee_status', 'Present')->orWhere('employee_status', 'Late');
-                }]);
+
+            $companyCandidates = CompanyCandidate::where('company_id', $id)
+            ->where('status', 'Active')
+            ->where('verified_status', 'verified')
+                ->with([
+                    'candidate'
+                    // => function ($q) {
+                    //     $q->whereHas('attendances', function ($q) {
+                    //         $q->whereDate('created_at', today())
+                    //             ->where('employee_status', 'Present')->orWhere('employee_status', 'Late');
+                    //     });
+                    // }
+                ])->get();
+
+
+            if($companyCandidates && $companyCandidates->count() > 0){
+                $companyCandidates =  $companyCandidates;
+
             }
-            ])->get();
+
+                // dd($companyCandidate);
+            $absentCount = CompanyCandidate::where('company_id', $id)
+            ->where('status', 'Active')
+            ->where('verified_status', 'verified')->with(
+                'candidate'
+                ,function ($q) {
+                    $q->whereDoesntHave('todayattendances');
+                }
+            )->count();
+
+
+
+            $presentCount = CompanyCandidate::where('company_id', $id)
+            ->where('status', 'Active')
+            ->where('verified_status', 'verified')
+                ->whereHas(
+                    'candidate',
+                    function ($q) {
+                        $q->whereHas('attendances', function ($q) {
+                            $q->whereDate('created_at', today())
+                                ->where('employee_status', 'Present');
+                        });
+                    }
+                )->count();
+
+
+
+            $lateCount = CompanyCandidate::where('company_id', $id)
+            ->where('status', 'Active')
+            ->where('verified_status', 'verified')
+                ->whereHas(
+                    'candidate',
+                    function ($q) {
+                        $q->whereHas('attendances', function ($q) {
+                            $q->whereDate('created_at', today())
+                                ->where('employee_status', 'Late');
+                        });
+                    }
+                )->count();
+
+            $totalattendee = CompanyCandidate::where('company_id', $id)
+                ->where('verified_status', 'verified')
+                ->count();
+
             // dd($companyCandidate);
 
 
@@ -61,10 +117,11 @@ class ApiEmployerReportController extends Controller
             //     ->count();
             // $companyCandidates = $company->candidates;
             $data = [
-                // 'presentAttendee' => $present,
-                // 'lateAttendee' => $late,
-                // 'absentAttendee' => 0,
-                'companycandidate' => CompanyCandidateResource::collection($companyCandidate),
+                'total_attendee' =>  $totalattendee ?? 0,
+                'present' => $presentCount ?? 0,
+                'late' =>  $lateCount  ?? 0,
+                'absent' => $absentCount ?? 0,
+                'candidates' => $companyCandidates ?? [],
                 // 'candidates' => CandidateResource::collection($companyCandidates)
             ];
             return $this->response->responseSuccess($data, "Success", 200);
@@ -79,11 +136,13 @@ class ApiEmployerReportController extends Controller
     {
         try {
             $company = Company::where('id', $id)->with('activeCandidates')->first();
+            if($company && $company->activeCandidates->isNotEmpty()){
+                $candidates =  CandidateResource::collection($company->activeCandidates);
+            }
             $data = [
-                'candidates' => CandidateResource::collection($company->activeCandidates)
+                'candidates' => $candidates ?? []
             ];
             return $this->response->responseSuccess($data, "Success", 200);
-
         } catch (Exception  $e) {
             return $this->response->responseError($e->getMessage());
         }
@@ -94,11 +153,14 @@ class ApiEmployerReportController extends Controller
     {
         try {
             $company = Company::where('id', $id)->with('inactiveCandidates')->first();
+            if($company && $company->activeCandidates->isNotEmpty()){
+                $candidates =  CandidateResource::collection($company->inactiveCandidates);
+            }
             $data = [
-                'candidates' => CandidateResource::collection($company->inactiveCandidates)
+                'candidates' => $candidates ?? []
             ];
-            return $this->response->responseSuccess($data, "Success", 200);
 
+            return $this->response->responseSuccess($data, "Success", 200);
         } catch (Exception  $e) {
             return $this->response->responseError($e->getMessage());
         }
@@ -146,7 +208,8 @@ class ApiEmployerReportController extends Controller
                     DB::raw("(company_businessleaves.business_leave_id - 1) as business_date")
                 )
                 ->get();
-            // dd($attendanceData);
+
+                dd($attendanceData);
             $reportData = [];
             for ($i = 0; $i <= 6; $i++) {
                 $day = $weekStart->copy()->addDays($i);
@@ -400,8 +463,7 @@ class ApiEmployerReportController extends Controller
                 'governmentLeavedaysCount' => $governmentleaveCount ?? 0,
                 'specialLeavedaysCount' => $specialleaveCount ?? 0,
                 'salary' => 20000
-                // 'monthlyData' => $reportDataCollection
-                // 'totaldays' => $totaldays ?? 0,
+
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
@@ -411,15 +473,89 @@ class ApiEmployerReportController extends Controller
     }
 
 
-    public function yearlyReport()
+    public function yearlyReport($companyid, $candidate_id, $year = null)
     {
+        try {
+
+            if (!$year) {
+                $year = date('Y');
+            }
+
+            // $month = DB::table('attendances')
+            // ->select('candidate_id', 'company_id', DB::raw('SUM(earning) AS total_earning'))
+            // ->get();
+
+
+            // $month = Attendance::select(DB::raw('earning as earnings'), 'candidate_id', 'company_id', 'candidate_id')
+            // ->select(DB::raw('company_id,candidate_id'))
+            // ->selectRaw('year(created_at) year, monthname(created_at) month')
+            //  ->groupBy('year', 'month')
+            // ->get();
+            // dd($month);
+
+
+
+            // dd($month);
+            // $month = DB::table('attendances')
+            // ->where('company_id', $companyid)
+            // ->where('candidate_id', $candidate_id)
+            // ->select(DB::raw('SUM(earning) as total_earning, DATE(created_at) as created_date'))
+            // ->groupBy(DB::raw('DATE(created_at)'))
+            // ->get();
+            // dd($month);
+
+
+            // $monthly = Attendance::select('id')->whereYear('created_at',2023)
+            // ->select(DB::raw("(sum(earning)) as earning"), DB::raw("GROUP_CONCAT(DISTINCT candidate_id) as candidate"),
+            //     DB::raw("GROUP_CONCAT(DISTINCT company_id) as company"))
+
+
+            // ->groupBy(DB::raw("DATE_FORMAT(created_at,'%M')"))
+            // ->get();
+            // dd($monthly);
+
+            $datas = Attendance::where('candidate_id', $candidate_id)
+                ->where('company_id', $companyid)
+                // ->select('company_id', 'candidate_id')
+
+                // ->selectRaw('year(created_at) year, monthname(created_at) month, sum(earning) as total_earning ')
+                ->select(
+                    DB::raw("(sum(earning)) as total_earning"),
+                    DB::raw("GROUP_CONCAT(DISTINCT candidate_id) as candidate"),
+                    DB::raw("GROUP_CONCAT(DISTINCT company_id) as company"),
+                    DB::raw("DATE_FORMAT(created_at,'%M') as month")
+                )
+
+
+
+                // ->groupBy('year', 'month')
+                ->groupBy(DB::raw("DATE_FORMAT(created_at,'%M')"))
+                // ->orderBy('year', 'desc')
+                ->get();
+            // ->groupBy(function ($date) {
+            //     return Carbon::parse($date->created_at)->format('M');
+            // });
+                dd($datas->pluck('month')->toArray());
+
+                // foreach($datas as $data ){
+                //     if($data->month )
+                // }
+
+
+            $data = [
+                'datas' => YearlyEarningResource::collection($datas)
+            ];
+            return $this->response->responseSuccess($data, "Success", 200);
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
     }
 
 
     public function paymentSubmit(Request $request, $company_id, $candidate_id)
     {
         try {
-            // dd($request->all());
+
             $payment = new Payment();
             $payment->status = 'Paid';
             $payment->paid_amount = $request->paid_amount;
@@ -435,4 +571,35 @@ class ApiEmployerReportController extends Controller
             return $this->response->responseError($e->getMessage());
         }
     }
+
+
+
+    public function checkPayment($companyid, $candidateid, $month){
+        try {
+
+            $candidatePayment = Payment::where('company_id', $companyid)
+            ->where('candidate_id', $candidateid)
+            ->whereMonth('payment_for_month', $month)
+            ->exists();
+
+
+
+            if($candidatePayment){
+                $status = 'paid';
+            }else{
+                $status = 'unpaid';
+            }
+            return $this->response->responseSuccess($status, "Successfully fetched", 200);
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
+
+
+
+
+
+
 }

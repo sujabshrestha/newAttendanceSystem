@@ -35,13 +35,11 @@ class CandidateRepository implements CandidateInterface
 
 
         $company = Company::where('id', $id)->first();
-        // dd($request->all());
         if ($company) {
 
 
             $user = User::where('phone', $request->contact)->candidateCheck()->first();
             if (!$user) {
-                // dd("false");
 
                 $user = new User();
                 $user->firstname = $request->name;
@@ -80,7 +78,12 @@ class CandidateRepository implements CandidateInterface
 
 
                 $companycandidate = new CompanyCandidate();
-                $companycandidate->company_id = $company->id;
+                if($request->code){
+                    $companycandidate->company_id = $company->id;
+                }else{
+                    $companycandidate->company_id = 'C-'.rand(0000, 9999);
+
+                }
                 $companycandidate->code = $request->code;
                 // $companycandidate->candidate_id = $candidate->id;
                 $companycandidate->candidate_id = $user->id;
@@ -88,10 +91,14 @@ class CandidateRepository implements CandidateInterface
                 $companycandidate->office_hour_end = $request->office_hour_end;
                 $companycandidate->salary_type = $request->salary_type;
                 $companycandidate->duty_time = $request->duty_time;
+                $companycandidate->designation = $request->designation;
+                $companycandidate->joining_date = Carbon::parse($request->joining_date);
+                $companycandidate->allow_late_attendance = (double) $request->allow_late_attendance;
+
                 $companycandidate->verified_status = 'not_verified';
                 $companycandidate->status = 'Inactive';
                 $companycandidate->salary_amount = $request->salary_amount;
-                $companycandidate->overtime = $request->overtime;
+                $companycandidate->overtime = $request->over_time;
                 if (!$companycandidate->save()) {
                     throw new Exception("Something went wrong while storing ccompany candiate");
                 }
@@ -135,9 +142,12 @@ class CandidateRepository implements CandidateInterface
                     'salary_type' => $request->salary_type,
                     'duty_time' => $request->duty_time,
                     'verified_status' => 'not_verified',
+                    'designation' => $request->designation,
                     'status' => 'Inactive',
+                    'allow_late_attendance' => $request->allow_late_attendance,
+                    'joining_date' => Carbon::parse($request->joining_date),
                     'salary_amount' => $request->salary_amount,
-                    'overtime' => $request->overtime,
+                    'overtime' => $request->over_time,
                 ]);
 
                 // $companycandidate->company_id = $company->id;

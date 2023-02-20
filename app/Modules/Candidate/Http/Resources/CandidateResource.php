@@ -28,11 +28,11 @@ class CandidateResource extends JsonResource
             'address' => $this->address,
             'joining_date' => Carbon::parse($this->joining_date),
 
-            'office_hour_start' => $this->pivot->office_hour_start ?? "",
-            'office_hour_end' => $this->pivot->office_hour_end ?? "",
-            'status' => $this->pivot->status ?? "",
-            'salary_type' => $this->pivot->salary_type ?? "",
-            'salary_amount' => $this->pivot->salary_amount ?? "",
+            // 'office_hour_start' => $this->pivot->office_hour_start ?? "",
+            // 'office_hour_end' => $this->pivot->office_hour_end ?? "",
+            // 'status' => $this->pivot->status ?? "",
+            // 'salary_type' => $this->pivot->salary_type ?? "",
+            // 'salary_amount' => $this->pivot->salary_amount ?? "",
             'companies' => CompanyResource::collection($this->whenLoaded('companies')),
             'employer' => new EmployerResource($this->whenLoaded('employer'))
 

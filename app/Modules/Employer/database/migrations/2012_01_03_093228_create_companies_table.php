@@ -17,7 +17,7 @@ class CreateCompaniesTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('code')->unique();
+            $table->boolean('code')->default(1);
             $table->enum('status',['Active', 'Inactive'])->default('Active');
             $table->string('address')->nullable();
             $table->string('email')->nullable();
@@ -29,6 +29,11 @@ class CreateCompaniesTable extends Migration
             $table->enum('calculation_type', ['calendar_days', '30_days'])->nullable();
 
             $table->enum('salary_type', ['monthly', 'weekly', 'daily'])->nullable();
+
+            $table->enum('leave_duration_type', ['Yearly', 'Monthly'])->nullable();
+            // $table->enum('probation_duration_type', ['Yearly', 'Monthly'])->nullable();
+            $table->unsignedBigInteger('leave_duration')->nullable();
+            $table->unsignedBigInteger('probation_duration')->nullable();
 
             $table->unsignedBigInteger('employer_id')->nullable();
             $table->foreign('employer_id')->references('id')->on('users')->onDelete('set null');

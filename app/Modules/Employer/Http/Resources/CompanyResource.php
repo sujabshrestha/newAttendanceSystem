@@ -23,14 +23,20 @@ class CompanyResource extends JsonResource
             'phone' => $this->phone,
             'address' => $this->address,
             'working_hours' => $this->working_hours,
-            'office_hour_start' => $this->pivot->office_hour_start ?? null,
-            'office_hour_end' => $this->pivot->office_hour_end ?? null,
-            'salary_type' => $this->pivot->salary_type ?? null,
-            'duty_time' => $this->pivot->duty_time ?? null,
-            'overtime' => $this->pivot->overtime ?? null,
-            'salary_amount' => $this->pivot->salary_amount ?? null,
-            'verified_status' => $this->pivot->verified_status ?? null,
-            'status' => $this->pivot->status ?? null
+            'office_hour_start' => $this->pivot->office_hour_start ?? $this->office_hour_start ?? null,
+            'office_hour_end' => $this->pivot->office_hour_end ?? $this->office_hour_end ?? null,
+            'salary_type' => $this->pivot->salary_type ?? $this->salary_type ?? null,
+            // 'duty_time' => $this->pivot->duty_time ?? $this->duty_time ?? null,
+            // 'overtime' => $this->pivot->overtime ?? $this->overtime ?? null,
+            // 'salary_amount' => $this->pivot->salary_amount ?? $this->salary_amount ?? null,
+            // 'verified_status' => $this->pivot->verified_status ?? null,
+            // 'status' => $this->pivot->status ?? null,
+            'sick_leave_type' => $this->leave_duration_type ?? null,
+            'sick_leave_days' => $this->leave_duration ?? null,
+            'probation_duration' => $this->probation_duration ?? null,
+            'employee_count' => $this->candidates_count ?? 0,
+            'approver_count' => 0
+
         ];
     }
 }
