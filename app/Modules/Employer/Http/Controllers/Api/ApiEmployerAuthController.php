@@ -122,7 +122,7 @@ class ApiEmployerAuthController extends Controller
 
 
 
-    public function profileUpdate(Request $request)
+    public function profileUpdate(ProfileUpdateRequest $request)
     {
         try {
             $user = User::where('id', auth()->user()->id)->first();

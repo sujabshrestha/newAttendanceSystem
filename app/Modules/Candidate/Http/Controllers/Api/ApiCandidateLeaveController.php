@@ -60,7 +60,7 @@ class ApiCandidateLeaveController extends Controller
     }
 
     public function storeCandidateLeave(Request $request, $company_id){
-        try{
+        // try{
 
 
             $dates = getDatesFromRange(Carbon::parse($request->start_date), Carbon::parse($request->end_date));
@@ -110,9 +110,9 @@ class ApiCandidateLeaveController extends Controller
             // dd($LeaveExists);
 
 
-        }catch(\Exception $e){
-            return $this->response->responseError($e->getMessage());
-        }
+        // }catch(\Exception $e){
+        //     return $this->response->responseError($e->getMessage());
+        // }
     }
 
 

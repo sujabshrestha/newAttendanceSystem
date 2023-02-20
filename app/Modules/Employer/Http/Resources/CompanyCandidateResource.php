@@ -23,8 +23,20 @@ class CompanyCandidateResource extends JsonResource
             'phone' => $this->candidate->phone,
             'email' => $this->candidate->email,
             'code' => $this->code,
-            'status' => $this->status
+            'status' =>  $this->checkAttendanceToday($this),
 
         ];
+    }
+
+
+    private function checkAttendanceToday($data)
+    {
+
+        $attendance = $data->candidate->attendances->where('created_at', '>=', Carbon::today())->first();
+        
+        if ($attendance) {
+            return $attendance->employee_status;
+        }
+        return "absent";
     }
 }

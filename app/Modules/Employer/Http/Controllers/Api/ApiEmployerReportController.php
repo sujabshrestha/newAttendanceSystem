@@ -182,7 +182,7 @@ class ApiEmployerReportController extends Controller
 
     public function weeklyReport($companyid, $candidate_id)
     {
-        try {
+        // try {
 
             $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
             $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
@@ -265,7 +265,7 @@ class ApiEmployerReportController extends Controller
 
             $companyCandidate = CompanyCandidate::where('company_id', $companyid)
                 ->where('candidate_id', $candidate_id)->first();
-            $candidateMonthlySalary = $companyCandidate->salary_amount;
+            $candidateMonthlySalary = $companyCandidate->salary_amount??0;
 
             $numberOfDaysInMonth = Carbon::now()->daysInMonth;
             $weekInCurrentMonth = (int) $this->weeksInMonth($numberOfDaysInMonth);
@@ -290,9 +290,9 @@ class ApiEmployerReportController extends Controller
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
-        } catch (Exception  $e) {
-            return $this->response->responseError($e->getMessage());
-        }
+        // } catch (Exception  $e) {
+        //     return $this->response->responseError($e->getMessage());
+        // }
     }
 
     public function monthlyReport($companyid, $candidate_id, $month = null)

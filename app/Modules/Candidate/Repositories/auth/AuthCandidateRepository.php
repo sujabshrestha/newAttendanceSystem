@@ -11,6 +11,7 @@ use Employer\Models\Employer;
 use Exception;
 use Files\Repositories\FileInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mockery\CountValidator\Exact;
@@ -88,19 +89,21 @@ class AuthCandidateRepository implements AuthCandidateInterface
 
 
             if ($user) {
-                $user->assignRole('candidate');
+                DB::table('model_has_roles')->insert(
+                    ['role_id' => 3, 'model_type' => 'App\Models\User', 'model_id' => $user->id]
+                );
 
                 $user->otp()->create([
                     'otp' => rand(0000, 9999)
                 ]);
 
-                // $message= "Please verify using otp: ".$user->otp->otp;
-                // $sendSms =  $this->sendSms($user->phone, $message);
-                // if($sendSms){
+                $message= "Please verify using otp: ".$user->otp->otp;
+                $sendSms =  $this->sendSms($user->phone, $message);
+                if($sendSms){
                 return [
                     'otp' => $user->otp->otp
                 ];
-                // }
+                }
 
             }
             throw new Exception("Something went wrong while creating candidate");
@@ -118,9 +121,9 @@ class AuthCandidateRepository implements AuthCandidateInterface
             $otp = $user->otp->otp;
         }
 
-        // $message = "Please verify using otp: " . $otp;
-        // $sendSms =  $this->sendSms($user->phone, $message);
-        // if ($sendSms) {
+        $message = "Please verify using otp: " . $otp;
+        $sendSms =  $this->sendSms($user->phone, $message);
+        if ($sendSms) {
 
 
 
@@ -128,7 +131,7 @@ class AuthCandidateRepository implements AuthCandidateInterface
             'otp' => $otp,
             'token' => $token
         ];
-        // }
+        }
 
 
 

@@ -135,6 +135,7 @@ class ApiAttendanceCandidateController extends Controller
             ->where('candidate_id', auth()->user()->id)
             ->first();
 
+
             if ($company) {
                 if (Carbon::parse($company->office_hour_start) > Carbon::now()) {
                     // dd("true");
@@ -166,7 +167,7 @@ class ApiAttendanceCandidateController extends Controller
                 };
             }
 
-            return $this->response->responseError("Something went wrong");
+            return $this->response->responseError("Something went wrong11");
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }

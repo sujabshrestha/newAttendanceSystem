@@ -22,7 +22,6 @@ class CandidateMiddleware
 
             $user = auth()->user();
 
-
             if ($user->hasRole('candidate')) {
                 return $next($request);
             }

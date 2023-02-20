@@ -11,8 +11,8 @@ use App\Models\Invitation;
 use App\Models\User;
 use Candidate\Http\Resources\CandidateInvitationResource;
 use Candidate\Http\Resources\CandidateResource;
-use Candidate\Models\Candidate;
 use Candidate\Models\CompanyCandidate;
+use Employer\Http\Resources\CompanyCandidateResource;
 use Employer\Http\Resources\InvitationResource;
 use Employer\Http\Resources\LeavetypeResource;
 use Employer\Models\Company;
@@ -57,28 +57,25 @@ class ApiInvitationController extends Controller
     {
         try {
 
+
             $user_id = Auth()->id();
             $company = Company::where('id', $company_id)->first();
             if ($company) {
-                $invitations = Invitation::where('employer_id', $user_id)
-                ->where('company_id', $company->id)
-                ->where('status', 'Not-Approved')
-                // ->with(['candidate' => function($q){
-                //     $q->where('type', 'candidate');
-                // }])
-                    // ->whereHas('candidate', function($q){
-                    //     $q->where('type', 'candidate');
-                    // })
-                    ->get()->pluck('candidate_id')->toArray();
 
 
-                    $candidates = User::whereIn('id', $invitations)->get();
+                $invitationCandidates = CompanyCandidate::where('company_id', $company_id)
+                ->where(function($q){
+                    $q->where('verified_status', 'not_verified')
+                    ->orWhere('status', 'Inactive');
+                })->get();
 
-                if ($candidates) {
-                    $candidate =  CandidateResource::collection($candidates);
+
+
+                if ($invitationCandidates ) {
+                    $candidates = CompanyCandidateResource::collection($invitationCandidates);
                 }
                 $data = [
-                    'candidate' => $candidate ?? []
+                    'candidates' => $candidates ?? []
                 ];
                 return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
 
@@ -101,7 +98,6 @@ class ApiInvitationController extends Controller
     public function store(Request $request, $company_id)
     {
         try {
-            // dd($request->all());
             $user = Auth()->user();
             $invitation = new Invitation();
             $invitation->employer_id = $user->id;
@@ -110,6 +106,15 @@ class ApiInvitationController extends Controller
             $invitation->company_id = $company_id;
 
             if ($invitation->save() == true) {
+                CompanyCandidate::updateOrCreate([
+                    'company_id' => $company_id,
+                    'candidate_id' => $request->candidate_id
+                ], [
+                    'invitation_id' => $invitation->id
+                ]);
+
+
+
                 return $this->response->responseSuccessMsg("Successfully Created", 200);
             }
             return $this->response->responseError("Something Went Wrong While Saving. Please Try Again.");
