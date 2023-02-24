@@ -239,8 +239,6 @@ class ApiEmployerReportController extends Controller
 
            
 
-            $
-
 
             $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
             $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
