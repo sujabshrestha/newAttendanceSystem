@@ -86,10 +86,10 @@ class CompanyRepository implements CompanyInterface
         $company->office_hour_start = Carbon::parse($request->office_hour_start)->format('H:i');
         $company->office_hour_end = Carbon::parse($request->office_hour_end)->format('H:i');
 
-        $company->leave_duration_type = $request->leave_duration_type;
-        // $company->probation_duration_type = $request->probation_duration_type;
-        $company->leave_duration = $request->leave_duration;
-        $company->probation_duration = $request->probation_duration;
+        // $company->leave_duration_type = $request->leave_duration_type;
+        // // $company->probation_duration_type = $request->probation_duration_type;
+        // $company->leave_duration = $request->leave_duration;
+        // $company->probation_duration = $request->probation_duration;
 
         $company->employer_id = Auth::id();
         if ($company->save()) {
