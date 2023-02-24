@@ -7,10 +7,17 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CompanyCandidateResource;
 use App\Http\Resources\YearlyEarningResource;
+use App\Models\CompanyGovernmentleave;
+use App\Models\CompanySpecialleave;
+use App\Models\User;
 use Candidate\Http\Resources\CandidateResource;
 use Candidate\Models\Attendance;
+use Candidate\Models\Candidate;
+use Candidate\Models\CompanyBusinessleave;
 use Candidate\Models\CompanyCandidate;
+use Candidate\Models\Leave;
 use Carbon\Carbon;
+use Employer\Http\Resources\CompanyCandidateDailyAttendanceReport;
 use Employer\Models\Company;
 use Employer\Models\Payment;
 use Exception;
@@ -33,39 +40,37 @@ class ApiEmployerReportController extends Controller
 
 
             $companyCandidates = CompanyCandidate::where('company_id', $id)
-            ->where('status', 'Active')
-            ->where('verified_status', 'verified')
+                // ->where('status', 'Active')
+                ->where('verified_status', 'verified')
                 ->with([
-                    'candidate'
-                    // => function ($q) {
-                    //     $q->whereHas('attendances', function ($q) {
-                    //         $q->whereDate('created_at', today())
-                    //             ->where('employee_status', 'Present')->orWhere('employee_status', 'Late');
-                    //     });
-                    // }
-                ])->get();
+                    'candidate', 'companyCandidateAttendaces'
+
+                ])
+                ->get();
+
+            // $candidates = User::where()
 
 
-            if($companyCandidates && $companyCandidates->count() > 0){
-                $companyCandidates =  $companyCandidates;
 
+            if ($companyCandidates && $companyCandidates->count() > 0) {
+                $companyCandidates =  CompanyCandidateDailyAttendanceReport::collection($companyCandidates);
             }
 
-                // dd($companyCandidate);
+            // dd($companyCandidate);
             $absentCount = CompanyCandidate::where('company_id', $id)
-            ->where('status', 'Active')
-            ->where('verified_status', 'verified')->with(
-                'candidate'
-                ,function ($q) {
-                    $q->whereDoesntHave('todayattendances');
-                }
-            )->count();
+                ->where('status', 'Active')
+                ->where('verified_status', 'verified')->with(
+                    'candidate',
+                    function ($q) {
+                        $q->whereDoesntHave('todayattendances');
+                    }
+                )->count();
 
 
 
             $presentCount = CompanyCandidate::where('company_id', $id)
-            ->where('status', 'Active')
-            ->where('verified_status', 'verified')
+                ->where('status', 'Active')
+                ->where('verified_status', 'verified')
                 ->whereHas(
                     'candidate',
                     function ($q) {
@@ -79,8 +84,8 @@ class ApiEmployerReportController extends Controller
 
 
             $lateCount = CompanyCandidate::where('company_id', $id)
-            ->where('status', 'Active')
-            ->where('verified_status', 'verified')
+                ->where('status', 'Active')
+                ->where('verified_status', 'verified')
                 ->whereHas(
                     'candidate',
                     function ($q) {
@@ -135,9 +140,26 @@ class ApiEmployerReportController extends Controller
     public function activeCompanyCandidates($id)
     {
         try {
-            $company = Company::where('id', $id)->with('activeCandidates')->first();
-            if($company && $company->activeCandidates->isNotEmpty()){
-                $candidates =  CandidateResource::collection($company->activeCandidates);
+
+
+            $companyCandidates = CompanyCandidate::where('company_id', $id)
+                ->where('status', 'Active')
+                ->where('verified_status', 'verified')
+
+                ->with([
+                    'candidate', 'activecompanyCandidateAttendaces'
+
+                ])
+                ->whereHas('activecompanyCandidateAttendaces', function ($q) {
+                    $q->whereIn('employee_status', ['Present', 'Late']);
+                })
+                ->get();
+
+
+
+
+            if ($companyCandidates && $companyCandidates) {
+                $candidates =  CompanyCandidateDailyAttendanceReport::collection($companyCandidates);
             }
             $data = [
                 'candidates' => $candidates ?? []
@@ -152,9 +174,19 @@ class ApiEmployerReportController extends Controller
     public function inactiveCompanyCandidates($id)
     {
         try {
-            $company = Company::where('id', $id)->with('inactiveCandidates')->first();
-            if($company && $company->activeCandidates->isNotEmpty()){
-                $candidates =  CandidateResource::collection($company->inactiveCandidates);
+            $companyCandidates = CompanyCandidate::where('company_id', $id)
+                ->where('status', 'Active')
+                ->where('verified_status', 'verified')
+
+                ->with([
+                    'candidate', 'activecompanyCandidateAttendaces'
+
+                ])
+                ->whereDoesntHave('activecompanyCandidateAttendaces')
+                ->get();
+
+            if ($companyCandidates) {
+                $candidates =  CompanyCandidateDailyAttendanceReport::collection($companyCandidates);
             }
             $data = [
                 'candidates' => $candidates ?? []
@@ -178,67 +210,159 @@ class ApiEmployerReportController extends Controller
         return $numberOfFullWeeks;
     }
 
+
+
+
+    public function dailyReport($companyid, $candidateid){
+        try{
+
+            $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+            $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+            $candidate = CompanyCandidate::where('candidate_id', $candidateid)->first();
+            $attendances = Attendance::where('candidate_id', $candidateid)->where('company_id', $companyid)->whereBetween('created_at', [$weekStart, $weekEnd])->get();
+
+            $companyBusinessLeave = CompanyBusinessleave::where('company_id', $candidate->company_id)->get()
+            ->pluck('business_leave_id')->toArray();
+
+            $companySpecialLeave = CompanySpecialleave::where('company_id', $candidate->company_id)
+            ->whereBetween('leave_date', [$weekStart, $weekEnd])->get() ->pluck('leave_date')->toArray();
+            $companyGovermentLeave = CompanyGovernmentleave::where('company_id', $candidate->company_id)
+            ->whereBetween('leave_date', [$weekStart, $weekEnd])->get() ->pluck('leave_date')->toArray();
+            $reportData = [];
+            for ($i = 0; $i <= 6; $i++) {
+                $day = $weekStart->copy()->addDays($i);
+                $WeekDayNumber = $day->format('w')+1;
+                $checkAttendance = checkAttendance($day, $attendances);
+                $checkBusinessLeave = checkBusinessLeave($WeekDayNumber, $companyBusinessLeave);
+                $checkSpecialHoliday = checkSpecialHoliday($day->format('Y-m-d'), $companySpecialLeave);
+                $checkGovermentHoliday = checkGovermentHoliday($day->format('Y-m-d'), $companyGovermentLeave);
+                if($checkAttendance){
+                    $reportData[ $day->format('Y-m-d')] = $checkAttendance;
+                }elseif($checkBusinessLeave){
+                    $reportData[ $day->format('Y-m-d')] = $checkBusinessLeave;
+                }elseif($checkSpecialHoliday){
+                    $reportData[ $day->format('Y-m-d')] = $checkSpecialHoliday;
+                }elseif($checkGovermentHoliday){
+                    $reportData[ $day->format('Y-m-d')] = $checkGovermentHoliday;
+                }else{
+                    $reportData[ $day->format('Y-m-d')] = "Absent";
+                }
+            }
+
+            // dd($reportData);
+
+            $attendance = Attendance::where('candidate_id', $candidateid)
+            ->where('company_id', $companyid)
+            ->where('created_at', Carbon::today())
+            ->where(function($q){
+                $q->whereIn('employee_status', ['Present', 'late', 'Leave']);
+            })
+            ->first();
+
+            if($attendance){
+                $startime = $attendance->start_time;
+                $endtime = $attendance->end_time;
+                $totalearning = $attendance->earning + $attendance->overtime_earning;
+                $status = 'present';
+            }else{
+
+                $status = 'absent';
+            }
+
+
+            // $startdate = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+            // $enddate = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+
+
+            // $week_dates = getDatesFromRange($startdate->format('Y-m-d'), $enddate->format('Y-m-d'));
+            // foreach($week_dates as $date){
+
+            //     if(Carbon::parse($date)->isSunday()){
+            //         $status = 'holiday';
+            //     }elseif(Carbon::parse($date)->isSaturday()){
+            //         $status = 'holiday';
+            //     }
+            //     elseif(isset($attendance) && $attendance->created_at->format('Y-m-d') == $date){
+            //         $status = "present";
+            //     }else{
+            //         $status = "absent";
+            //     }
+
+            //     $newweek_dates[$date] = [
+            //         'status' => $status
+            //     ];
+            // }
+
+
+
+
+            $data = [
+                'weekly_datas' => $reportData,
+                'start_time' => isset($startime) ? $startime : null,
+                'end_time' => isset($endtime) ? $endtime : null,
+                'break_time' => isset($attendance) ? $attendance->breakDuration : null,
+                'attendance_duration' => isset($attendance) ? $attendance->attendanceDuration : null,
+                'earning' => isset($attendance) ? $attendance->earning  : null,
+                'overtime_earning' => isset($attendance) ? $attendance->overtime_earning  : null,
+                'totalearning' => $totalearning  ?? null,
+
+            ];
+            return $this->response->responseSuccess($data, "Success", 200);
+            // dd($newweek_dates);
+
+        }catch(\Exception $e){
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
+
     public function weeklyReport($companyid, $candidate_id)
     {
         try {
 
             $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
             $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
-            $attendanceData = DB::table('attendances')
-                ->join('company_specialleaves', function ($join) use ($weekStart, $weekEnd) {
-                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
-                        ->whereBetween('company_specialleaves.leave_date', [$weekStart, $weekEnd]);
-                })
-                ->join('company_governmentleaves', function ($join) use ($weekStart, $weekEnd) {
-                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
-                        ->whereBetween('company_governmentleaves.leave_date', [$weekStart, $weekEnd]);
-                })
-                ->join('company_businessleaves', function ($join) {
-                    $join->on('attendances.company_id', '=', 'company_businessleaves.company_id');
-                })
+            $candidate = CompanyCandidate::where('candidate_id', $candidate_id)->first();
+            $attendances = Attendance::where('candidate_id', $candidate_id)->where('company_id', $companyid)->whereBetween('created_at', [$weekStart, $weekEnd])->get();
+            $companyBusinessLeave = CompanyBusinessleave::where('company_id', $candidate->company_id)->get()
+            ->pluck('business_leave_id')->toArray();
 
-                ->where('attendances.candidate_id', '=', $candidate_id)
-                ->where('attendances.company_id', '=', $companyid)
-
-                ->select(
-                    DB::raw("Date(attendances.created_at) as attendance_day"),
-                    'attendances.employee_status',
-                    DB::raw("Date(company_specialleaves.leave_date) as special_date"),
-                    DB::raw("Date(company_governmentleaves.leave_date) as goverment_date"),
-                    DB::raw("(company_businessleaves.business_leave_id - 1) as business_date")
-                )
-                ->get();
-
-                dd($attendanceData);
+            $companySpecialLeave = CompanySpecialleave::where('company_id', $candidate->company_id)
+            ->whereBetween('leave_date', [$weekStart, $weekEnd])->get() ->pluck('leave_date')->toArray();
+            $companyGovermentLeave = CompanyGovernmentleave::where('company_id', $candidate->company_id)
+            ->whereBetween('leave_date', [$weekStart, $weekEnd])->get() ->pluck('leave_date')->toArray();
             $reportData = [];
             for ($i = 0; $i <= 6; $i++) {
                 $day = $weekStart->copy()->addDays($i);
-                // dd($day);
-
-                $reportData[$day->format('Y-m-d')] = 'Absent';
-                foreach ($attendanceData as $data) {
-                    // dd($day->format('w'));
-                    // dd($data->business_date);
-                    if ($day->format('Y-m-d') == $data->attendance_day) {
-                        $reportData[$day->format('Y-m-d')] = $data->employee_status;
-                    } elseif ($day->format('Y-m-d') == $data->special_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Special Holiday';
-                    } elseif ($day->format('Y-m-d') == $data->goverment_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Government Holiday';
-                    } elseif ($day->format('w') == $data->business_date) {
-                        // dd('sadsad');
-
-                        $reportData[$day->format('Y-m-d')] = 'Business Holiday';
-                    }
+                $WeekDayNumber = $day->format('w')+1;
+                $checkAttendance = checkAttendance($day, $attendances);
+                $checkBusinessLeave = checkBusinessLeave($WeekDayNumber, $companyBusinessLeave);
+                $checkSpecialHoliday = checkSpecialHoliday($day->format('Y-m-d'), $companySpecialLeave);
+                $checkGovermentHoliday = checkGovermentHoliday($day->format('Y-m-d'), $companyGovermentLeave);
+                if($checkAttendance){
+                    $reportData[ $day->format('Y-m-d')] = $checkAttendance;
+                }elseif($checkBusinessLeave){
+                    $reportData[ $day->format('Y-m-d')] = $checkBusinessLeave;
+                }elseif($checkSpecialHoliday){
+                    $reportData[ $day->format('Y-m-d')] = $checkSpecialHoliday;
+                }elseif($checkGovermentHoliday){
+                    $reportData[ $day->format('Y-m-d')] = $checkGovermentHoliday;
+                }else{
+                    $reportData[ $day->format('Y-m-d')] = "Absent";
                 }
             }
-
             // dd($reportData);
+
+
+
+
             $reportDataCollection = collect($reportData);
 
             $absentdates = array_filter($reportData, function ($var) {
                 return ($var == "Absent");
             });
+
 
             foreach ($absentdates as $key => $value) {
                 $attendance = Attendance::updateOrCreate([
@@ -263,31 +387,37 @@ class ApiEmployerReportController extends Controller
 
             $companyCandidate = CompanyCandidate::where('company_id', $companyid)
                 ->where('candidate_id', $candidate_id)->first();
-            $candidateMonthlySalary = $companyCandidate->salary_amount;
 
-            $numberOfDaysInMonth = Carbon::now()->daysInMonth;
-            $weekInCurrentMonth = (int) $this->weeksInMonth($numberOfDaysInMonth);
+            // if($companyCandidate){
+                $candidateMonthlySalary = $companyCandidate->salary_amount;
 
-            $daysInCurrentMonth = (int) Carbon::parse(today())->daysInMonth;
+                $numberOfDaysInMonth = Carbon::now()->daysInMonth;
+                $weekInCurrentMonth = (int) $this->weeksInMonth($numberOfDaysInMonth);
 
-            $salaryInWeek = (float)$candidateMonthlySalary / $weekInCurrentMonth;
-            $salaryPerDay = (float)$candidateMonthlySalary / $daysInCurrentMonth;
+                $daysInCurrentMonth = (int) Carbon::parse(today())->daysInMonth;
 
-            $salaryCountingdays = 7 - $absentCount;
+                $salaryInWeek = (float)$candidateMonthlySalary / $weekInCurrentMonth;
+                $salaryPerDay = (float)$candidateMonthlySalary / $daysInCurrentMonth;
 
-            $currentweekSalary = floor($salaryCountingdays * $salaryPerDay);
-            $data = [
-                'present' =>  $presentCount ?? 0,
-                'absent' => $absentcount ?? 0,
-                'leave' => $leaveCount ?? 0,
-                'weekdata ' =>  $reportDataCollection   ?? [],
-                'businessleaveCount' => $businessleaveCount ?? 0,
-                'governmentLeaveCount' => $governmentleaveCount ?? 0,
-                'specialLeaveCount' => $specialleaveCount ?? 0,
-                'current_week_salary' => $currentweekSalary
-            ];
+                $salaryCountingdays = 7 - $absentCount;
 
-            return $this->response->responseSuccess($data, "Success", 200);
+                $currentweekSalary = floor($salaryCountingdays * $salaryPerDay);
+
+                $data = [
+                    'present' =>  $presentCount ?? 0,
+                    'absent' => $absentcount ?? 0,
+                    'leave' => $leaveCount ?? 0,
+                    'weekdata ' =>  $reportDataCollection   ?? [],
+                    'businessleaveCount' => $businessleaveCount ?? 0,
+                    'governmentLeaveCount' => $governmentleaveCount ?? 0,
+                    'specialLeaveCount' => $specialleaveCount ?? 0,
+                    'current_week_salary' => $currentweekSalary
+                ];
+
+                return $this->response->responseSuccess($data, "Success", 200);
+            // }
+            // return $this->response->responseError("Company not found");
+
         } catch (Exception  $e) {
             return $this->response->responseError($e->getMessage());
         }
@@ -375,6 +505,11 @@ class ApiEmployerReportController extends Controller
                 }
             }
 
+
+
+
+
+
             $reportDataCollection = collect($reportData);
 
 
@@ -386,6 +521,41 @@ class ApiEmployerReportController extends Controller
             $businessleaveCount = $counts['Business Holiday'] ?? 0;
             $governmentleaveCount = $counts['Government Holiday'] ?? 0;
             $specialleaveCount = $counts['Special Holiday'] ?? 0;
+
+
+
+            $company = Company::where('id', $companyid)
+                ->where('status', 'Active')
+                // ->where('employer_id', auth()->user()->id)
+                ->first();
+
+
+            // dd($candidate_id);
+            $Sickleaves = Leave::where('candidate_id', $candidate_id)
+                ->with('LeaveType')
+                ->whereHas('LeaveType', function ($q) {
+                    $q->where('title', 'Sick');
+                })
+                ->where('approved', 1)
+                ->whereMonth('created_at',$month)
+                ->get();
+
+            $counter = 0;
+            foreach($Sickleaves as $sickleave){
+                $counter = $counter + (int) Carbon::parse($sickleave->start_date)->diffInDays(Carbon::parse($sickleave->end_date));
+            }
+
+
+
+
+            $company_totalavailablesickleave =  $company->leave_duration ?? null;
+
+            if(isset($company_totalavailablesickleave)  && isset($counter)){
+                $totalsickdaysleft = $company_totalavailablesickleave - $counter;
+            }
+
+
+
 
 
 
@@ -462,7 +632,11 @@ class ApiEmployerReportController extends Controller
                 'businessleavedays' => $businessleaveCount ?? 0,
                 'governmentLeavedaysCount' => $governmentleaveCount ?? 0,
                 'specialLeavedaysCount' => $specialleaveCount ?? 0,
-                'salary' => 20000
+                'salary' => 20000,
+                'total_leave' => $company_totalavailablesickleave ?? 7,
+                'total_available' => $totalsickdaysleft ?? 0,
+                'taken' => $counter ?? 0
+
 
             ];
 
@@ -535,11 +709,11 @@ class ApiEmployerReportController extends Controller
             // ->groupBy(function ($date) {
             //     return Carbon::parse($date->created_at)->format('M');
             // });
-                dd($datas->pluck('month')->toArray());
+            dd($datas->pluck('month')->toArray());
 
-                // foreach($datas as $data ){
-                //     if($data->month )
-                // }
+            // foreach($datas as $data ){
+            //     if($data->month )
+            // }
 
 
             $data = [
@@ -574,19 +748,20 @@ class ApiEmployerReportController extends Controller
 
 
 
-    public function checkPayment($companyid, $candidateid, $month){
+    public function checkPayment($companyid, $candidateid, $month)
+    {
         try {
 
             $candidatePayment = Payment::where('company_id', $companyid)
-            ->where('candidate_id', $candidateid)
-            ->whereMonth('payment_for_month', $month)
-            ->exists();
+                ->where('candidate_id', $candidateid)
+                ->whereMonth('payment_for_month', $month)
+                ->exists();
 
 
 
-            if($candidatePayment){
+            if ($candidatePayment) {
                 $status = 'paid';
-            }else{
+            } else {
                 $status = 'unpaid';
             }
             return $this->response->responseSuccess($status, "Successfully fetched", 200);
@@ -594,12 +769,4 @@ class ApiEmployerReportController extends Controller
             return $this->response->responseError($e->getMessage());
         }
     }
-
-
-
-
-
-
-
-
 }

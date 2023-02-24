@@ -33,9 +33,12 @@ class CandidateResource extends JsonResource
             // 'status' => $this->pivot->status ?? "",
             // 'salary_type' => $this->pivot->salary_type ?? "",
             // 'salary_amount' => $this->pivot->salary_amount ?? "",
-            'companies' => CompanyResource::collection($this->whenLoaded('companies')),
-            'employer' => new EmployerResource($this->whenLoaded('employer'))
+            // 'companies' => CompanyResource::collection($this->whenLoaded('companies')),
+            // 'employer' => new EmployerResource($this->whenLoaded('employer'))
 
         ];
     }
+
+
+    
 }

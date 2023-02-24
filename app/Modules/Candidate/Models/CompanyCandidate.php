@@ -4,6 +4,7 @@ namespace Candidate\Models;
 
 use App\Models\Invitation;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,7 +26,8 @@ class CompanyCandidate extends Model
         'designation',
         'joining_date',
         'duty_time',
-        'allow_late_attendance'
+        'allow_late_attendance',
+        'invitation_id'
 
     ];
 
@@ -43,7 +45,22 @@ class CompanyCandidate extends Model
 
 
 
+    public function attendaces(){
+        return $this->hasMany(Attendance::class, 'candidate_id', 'candidate_id');
+    }
 
+
+    public function companyCandidateAttendaces(){
+        return $this->belongsTo(Attendance::class, 'candidate_id', 'candidate_id')->where('created_at', Carbon::parse(today()));
+    }
+
+
+
+    public function activecompanyCandidateAttendaces(){
+        return $this->belongsTo(Attendance::class, 'candidate_id', 'candidate_id')
+        ->where('created_at', Carbon::parse(today()))->whereNull('end_time');
+    }
+    
     public function invitation(){
         return $this->belongsTo(Invitation::class, 'invitation_id');
     }

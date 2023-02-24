@@ -14,7 +14,7 @@ class Attendance extends Model
     protected $appends = ['break_duration'];
 
 
-    public function getBreakAttribute()
+    public function getBreakDurationAttribute()
     {
         $datas = $this->breaks;
         if($datas->count() > 0){
@@ -30,6 +30,17 @@ class Attendance extends Model
         }
         return 0;
     }
+
+
+    public function getAttendanceDurationAttribute(){
+        $result = Carbon::parse("00:00:00");
+        $to = Carbon::parse($this->end_time);
+        $from = Carbon::parse($this->start_time);
+        $diff_in_hours = $to->diff($from)->format('%h:%i:%s');
+        $hms = explode(':',$diff_in_hours);
+        $result = $result->copy()->addHours($hms[0])->addMinutes($hms[1])->addSeconds($hms[2]);
+        return $result->format('h:i:s');
+    }
     protected $fillable = [
         'candidate_id',
         'leave_type_id',
@@ -38,7 +49,8 @@ class Attendance extends Model
         'employee_status',
         'company_id',
         'earning',
-        'created_at'
+        'created_at',
+        'overtime_earning'
     ];
 
 

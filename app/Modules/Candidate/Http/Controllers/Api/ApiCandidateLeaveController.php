@@ -9,9 +9,12 @@ use App\Models\CompanyGovernmentleave;
 use App\Models\CompanySpecialleave;
 use Candidate\Models\Leave;
 use Candidate\Http\Resources\CandidateLeaveResource;
+use Candidate\Models\CompanyBusinessleave;
 use Employer\Repositories\candidate\CandidateInterface;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Employer\Http\Resources\LeavetypeResource;
+use Employer\Models\Company;
 use Employer\Models\LeaveType;
 use Exception;
 use Files\Repositories\FileInterface;
@@ -54,7 +57,7 @@ class ApiCandidateLeaveController extends Controller
                 $candidateLeaves = CandidateLeaveResource::collection($userLeaves);
             }
             $data = [
-                'candidateLeaves' => $candidateLeaves
+                'candidateLeaves' => $candidateLeaves ?? []
             ];
             return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
 
@@ -63,31 +66,64 @@ class ApiCandidateLeaveController extends Controller
         }
     }
 
+
+
+    private function getSundays()
+    {
+        return new \DatePeriod(
+            Carbon::parse("first sunday of this month"),
+            CarbonInterval::week(),
+            Carbon::parse("first sunday of next month")
+        );
+    }
+
+
     public function storeCandidateLeave(Request $request, $company_id){
         try{
 
+            // $dates = getDatesFromRange(Carbon::parse($request->start_date), Carbon::parse($request->end_date));
 
-            $dates = getDatesFromRange(Carbon::parse($request->start_date), Carbon::parse($request->end_date));
-            $newdates = array_merge($dates, array('3' => '2023-02-07'));
-            // dd($newdates);
-            $govenmentLeaveDates = CompanyGovernmentleave::where('company_id', $company_id)
-            ->whereNotNull('leave_date')
-            ->pluck('leave_date')
-            ->toArray();
 
-            $specialLeaveDates = CompanySpecialleave::where('company_id', $company_id)
-            ->whereNotNull('leave_date')
-            ->pluck('leave_date')
-            ->toArray();
+            // $govenmentLeaveDates = CompanyGovernmentleave::where('company_id', $company_id)
+            // ->whereNotNull('leave_date')
+            // ->pluck('leave_date')
+            // ->toArray();
 
-            $leaveDates = array_merge($govenmentLeaveDates,$specialLeaveDates);
+            // $specialLeaveDates = CompanySpecialleave::where('company_id', $company_id)
+            // ->whereNotNull('leave_date')
+            // ->pluck('leave_date')
+            // ->toArray();
 
-            // dd($newdates, $leaveDates);
-            foreach($newdates as $date){
-                $LeaveExists = in_array($date, $leaveDates);
-            }
 
-            if($LeaveExists === false){
+            // $company = Company::where('id', $company_id)
+            // ->with('businessLeaves')->first();
+            // $companyBusinessLeaves = $company->businessLeaves->pluck('title')->toArray();
+
+
+            // $leaveDates = array_merge($govenmentLeaveDates,$specialLeaveDates);
+            // $startOfMonth = Carbon::now()->startOfMonth();
+            // $endOfMonth = Carbon::now()->endOfMonth();
+
+
+            // $sunday = now()->startOfWeek(Carbon::SUNDAY);
+            // $saturday = now()->endOfWeek(Carbon::SATURDAY);
+            // $businessdates = [
+            //     '0' => $sunday->format('Y-m-d'),
+            //     '1' => $saturday->format('Y-m-d')
+            // ];
+
+            // $leaveDates = array_merge($leaveDates, $businessdates);
+
+            // foreach($dates as $date){
+            //     if(in_array($date, $leaveDates)){
+            //         $LeaveExists = true;
+            //         break;
+            //     }else{
+            //         $LeaveExists = false;
+
+            //     }
+            // }
+            // if($LeaveExists === false){
                 $user = auth()->user();
                 $leave = new Leave();
                 $leave->candidate_id =$user->id;
@@ -108,10 +144,10 @@ class ApiCandidateLeaveController extends Controller
                     return $this->response->responseSuccessMsg("Successfully Created", 200);
                 }
                 return $this->response->responseError("Something Went Wrong While Saving. Please Try Again.");
-            }
+            // }
 
-            throw new Exception("Date already exists in special and leave ");
-            // dd($LeaveExists);
+            // throw new Exception("Date already exists in special holiday  or government holiday or business holiday ");
+
 
 
         }catch(\Exception $e){

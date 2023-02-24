@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Candidate\Models\Attendance;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -14,11 +15,16 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // \App\Models\User::factory(10)->create();'
-        $this->call(CountrySeeder::class);
-        $this->call(RoleSeeder::class);
-        $this->call(AdminSeeder::class);
-        $this->call(BusinessLeavedaySeeder::class);
-        $this->call(LeaveTypeSeeder::class);
+
+
+        // $this->call(CountrySeeder::class);
+        // $this->call(RoleSeeder::class);
+        // $this->call(AdminSeeder::class);
+        // $this->call(BusinessLeavedaySeeder::class);
+        // $this->call(LeaveTypeSeeder::class);
+
+        Attendance::factory(10)->create();
+
         // $this->call(AttendanceSeeder::class);
     }
 }

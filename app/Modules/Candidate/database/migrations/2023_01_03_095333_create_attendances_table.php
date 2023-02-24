@@ -29,6 +29,9 @@ class CreateAttendancesTable extends Migration
             $table->foreign('candidate_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('set null');
 
+            $table->float('overtime_earning')->nullable();
+        
+
             $table->timestamps();
         });
     }

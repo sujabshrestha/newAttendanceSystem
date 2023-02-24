@@ -106,6 +106,7 @@ class ApiInvitationController extends Controller
             $invitation->company_id = $company_id;
 
             if ($invitation->save() == true) {
+
                 CompanyCandidate::updateOrCreate([
                     'company_id' => $company_id,
                     'candidate_id' => $request->candidate_id

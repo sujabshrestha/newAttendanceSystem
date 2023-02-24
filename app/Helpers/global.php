@@ -33,6 +33,9 @@ function getDatesFromRange($start, $end, $format='Y-m-d') {
 
 
 
+
+
+
 function getdeliverydetails($userid = null)
 {
     if ($userid != null) {
@@ -309,3 +312,34 @@ function getMemberViewPoint()
 
 
 
+function checkBusinessLeave($include, $array = array())
+{
+    if (in_array($include, $array)) {
+        return "Business Leave";
+    }
+    return null;
+}
+function checkSpecialHoliday($include, $array = array())
+{
+    if (in_array($include, $array)) {
+        return "Special Leave";
+    }
+    return null;
+}
+function checkGovermentHoliday($include, $array = array())
+{
+    if (in_array($include, $array)) {
+        return "Goverment Leave";
+    }
+    return null;
+}
+function checkAttendance($include, $attendances)
+{
+    if ($attendances) {
+        $matchDate = $attendances->where('created_at', $include)->whereIn('employee_status', ['Present', 'Late', 'Leave'])->first();
+        if($matchDate){
+            return $matchDate->employee_status;
+        }
+    }
+    return null;
+}

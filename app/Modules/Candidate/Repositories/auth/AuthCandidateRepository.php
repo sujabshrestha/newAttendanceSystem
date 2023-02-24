@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mockery\CountValidator\Exact;
+use Spatie\Permission\Models\Role;
 
 class AuthCandidateRepository implements AuthCandidateInterface
 {
@@ -75,11 +76,22 @@ class AuthCandidateRepository implements AuthCandidateInterface
 
     public function register($request)
     {
+
+
         $user = User::where('phone', $request->phone)
             ->where('type', 'candidate')
             ->first();
-        if (!$user) {
 
+
+
+        if (isset($user) && $user->getRoleNames()->count() == 0 && ($user->getRoleNames()->contains('candidate') == false)) {
+            $user->assignRole('candidate');
+        }
+
+
+
+
+        if (!$user) {
             $user = User::create([
                 'phone' => $request->phone,
                 'password' => bcrypt($request->phone),
@@ -90,48 +102,46 @@ class AuthCandidateRepository implements AuthCandidateInterface
             if ($user) {
                 $user->assignRole('candidate');
 
-                $user->otp()->create([
-                    'otp' => rand(0000, 9999)
+                $user->otp()->updateOrCreate([
+                    'user_id' => $user->id
+                ], [
+                    'otp' => str_pad(rand(0, pow(10, 4)-1), 4, '0', STR_PAD_LEFT)
                 ]);
 
-                $message= "Please verify using otp: ".$user->otp->otp;
-                $sendSms =  $this->sendSms($user->phone, $message);
-                if($sendSms){
-                return [
-                    'otp' => $user->otp->otp
-                ];
-                }
-
+                // $message = "Please verify using otp: " . $user->otp->otp;
+                // $sendSms =  $this->sendSms($user->phone, $message);
+                // if ($sendSms) {
+                    return [
+                        'otp' => $user->otp->otp
+                    ];
+                // }
             }
             throw new Exception("Something went wrong while creating candidate");
         }
 
+
+
+
         $token =  $user->createToken('API Token')->accessToken;
 
-        if (!empty($user->otp)) {
-            $otp = $user->otp->otp;
-        } else {
+        $user->otp()->updateOrCreate([
+            'user_id' => $user->id
+        ], [
+            'otp' => str_pad(rand(0, pow(10, 4)-1), 4, '0', STR_PAD_LEFT)
+        ]);
+        $otp = $user->otp->otp;
 
-            $user->otp()->create([
-                'otp' => rand(0000, 9999)
-            ]);
-            $otp = $user->otp->otp;
-        }
-
-        $message = "Please verify using otp: " . $otp;
-        $sendSms =  $this->sendSms($user->phone, $message);
-        if ($sendSms) {
+        // $message = "Please verify using otp: " . $otp;
+        // $sendSms =  $this->sendSms($user->phone, $message);
+        // if ($sendSms) {
 
 
 
-        return [
-            'otp' => $otp,
-            'token' => $token
-        ];
-        }
-
-
-
+            return [
+                'otp' => $otp,
+                'token' => $token
+            ];
+        // }
     }
 
 

@@ -16,6 +16,7 @@ class CandidateStoreRequest extends FormRequest
      */
     public function authorize()
     {
+      
         return true;
     }
 

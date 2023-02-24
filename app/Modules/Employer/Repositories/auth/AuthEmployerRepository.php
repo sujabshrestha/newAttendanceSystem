@@ -75,6 +75,15 @@ class AuthEmployerRepository implements AuthEmployerInterface
         $user = User::where('phone', $request->phone)
             ->where('type', 'employer')
             ->first();
+
+
+        if (isset($user) && $user->getRoleNames()->count() == 0 && ($user->getRoleNames()->contains('employer') == false)) {
+            $user->assignRole('employer');
+        }
+
+
+
+
         if (!$user) {
             $user = User::create([
                 'phone' => $request->phone,
@@ -86,23 +95,25 @@ class AuthEmployerRepository implements AuthEmployerInterface
             if ($user) {
                 $user->assignRole('employer');
 
-                $user->otp()->create([
-                    'otp' => rand(0000, 9999)
+                $user->otp()->updateOrCreate([
+                    'user_id' => $user->id
+                ], [
+                    'otp' => str_pad(rand(0, pow(10, 4)-1), 4, '0', STR_PAD_LEFT)
                 ]);
 
                 $employer = new Employer();
                 $employer->code = 'E-' . Str::random(20);
-                $employer->phone = $request->phone; 
+                $employer->phone = $request->phone;
                 $employer->user_id = $user->id;
 
                 if ($employer->save()) {
-                    $message = "Please verify using otp: " . $user->otp->otp;
-                    $sendSms =  $this->sendSms($user->phone, $message);
-                    if ($sendSms) {
-                    return [
-                        'otp' => $user->otp->otp
-                    ];
-                    }
+                    // $message = "Please verify using otp: " . $user->otp->otp;
+                    // $sendSms =  $this->sendSms($user->phone, $message);
+                    // if ($sendSms) {
+                        return [
+                            'otp' => $user->otp->otp
+                        ];
+                    // }
                 }
                 throw new Exception("Something went wrong");
             }
@@ -110,19 +121,18 @@ class AuthEmployerRepository implements AuthEmployerInterface
             throw new Exception("Something went wrong while creating candidate");
         }
         $token =  $user->createToken('API Token')->accessToken;
-        if (!empty($user->otp)) {
-            $otp = $user->otp->otp;
-        } else {
 
-            $user->otp()->create([
-                'otp' => rand(0000, 9999)
-            ]);
-            $otp = $user->otp->otp;
-        }
 
-        $message = "Please verify using otp: " . $otp;
-        $sendSms =  $this->sendSms($user->phone, $message);
-        if ($sendSms) {
+        $user->otp()->updateOrCreate([
+            'user_id' => $user->id
+        ], [
+            'otp' => str_pad(rand(0, pow(10, 4)-1), 4, '0', STR_PAD_LEFT)
+        ]);
+        $otp = $user->otp->otp;
+
+        // $message = "Please verify using otp: " . $otp;
+        // $sendSms =  $this->sendSms($user->phone, $message);
+        // if ($sendSms) {
 
 
 
@@ -130,7 +140,7 @@ class AuthEmployerRepository implements AuthEmployerInterface
                 'otp' => $otp,
                 'token' => $token
             ];
-        }
+        // }
     }
 
 

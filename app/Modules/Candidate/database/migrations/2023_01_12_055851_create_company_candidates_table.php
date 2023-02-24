@@ -34,6 +34,9 @@ class CreateCompanyCandidatesTable extends Migration
             $table->string('salary_amount')->nullable();
             $table->enum('salary_type', ['monthly', 'weekly', 'daily']);
             $table->unsignedDouble('overtime',2,2)->nullable();
+
+            $table->softDeletes();
+
             $table->timestamps();
         });
     }

@@ -39,6 +39,7 @@ class CandidateRepository implements CandidateInterface
 
 
             $user = User::where('phone', $request->contact)->candidateCheck()->first();
+
             if (!$user) {
 
                 $user = new User();
@@ -56,25 +57,6 @@ class CandidateRepository implements CandidateInterface
                 }
 
                 $user->assignRole('candidate');
-
-                // $candidate = new Candidate();
-                // $candidate->firstname = $request->firstname;
-                // $user->lastname =$request->lastname;
-                // if($request->code){
-                //     $candidate->code = $request->code;
-                // }else{
-                //     $candidate->code = Str::random(20);
-                // }
-                // $candidate->status = 'Active';
-                // $candidate->address = $request->address;
-                // $candidate->contact = $request->contact;
-                // $candidate->email = $request->email;
-                // $candidate->dob = $request->dob;
-                // $candidate->user_id = $user->id;
-                // $candidate->employer_id = auth()->user()->id;
-                // if($candidate->save()){
-
-
 
 
                 $companycandidate = new CompanyCandidate();
@@ -131,6 +113,10 @@ class CandidateRepository implements CandidateInterface
                 $user->type = 'candidate';
                 $user->update();
 
+                if (isset($user) && $user->getRoleNames()->count() == 0 && ($user->getRoleNames()->contains('candidate') == false)) {
+                    $user->assignRole('candidate');
+                }
+
 
                 $companycandidate = CompanyCandidate::updateOrCreate([
                     'company_id' => $company->id,
@@ -144,7 +130,7 @@ class CandidateRepository implements CandidateInterface
                     'verified_status' => 'not_verified',
                     'designation' => $request->designation,
                     'status' => 'Inactive',
-                    'allow_late_attendance' => $request->allow_late_attendance,
+                    'allow_late_attendance' => (double) $request->allow_late_attendance,
                     'joining_date' => Carbon::parse($request->joining_date),
                     'salary_amount' => $request->salary_amount,
                     'overtime' => $request->over_time,
