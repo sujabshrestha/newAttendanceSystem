@@ -20,8 +20,6 @@ class CreateLeaveTypesTable extends Migration
             $table->enum('status', ['Active', 'Inactive'])->default('Active');
             $table->text('desc')->nullable();
 
-
-
             $table->unsignedBigInteger('company_id')->nullable();
             $table->unsignedBigInteger('employer_id')->nullable();
 

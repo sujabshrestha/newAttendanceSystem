@@ -33,11 +33,11 @@ Route::group([
         ], function () {
             Route::get('/all',  'ApiCompanyController@index');
 
+            Route::get('/change-status',  'ApiCompanyController@changeStatus');
+
             Route::get('/active',  'ApiCompanyController@activeCompanies');
 
             Route::get('/inactive',  'ApiCompanyController@inactiveCompanies');
-
-
 
 
             Route::post('/store',  'ApiCompanyController@store');
@@ -134,7 +134,17 @@ Route::group([
 
             Route::get('today/inactive-candidate/{companyid}','ApiEmployerReportController@inactiveCompanyCandidates');
 
+            Route::get('daily-report/{company_id}/{candidate_id}','ApiEmployerReportController@dailyReport');
+
             Route::get('weekly-report/{company_id}/{candidate_id}','ApiEmployerReportController@weeklyReport');
+
+            Route::get('report-filter/{company_id}/{year}/{month}','ApiEmployerReportController@filterReport');
+
+            //get all months from two dates
+            Route::get('all-months/{company_id}/{candidate_id}','ApiEmployerReportController@getAllCompanyCandidateMonths');
+
+            Route::get('all-years/{company_id}/{candidate_id}','ApiEmployerReportController@getAllCompanyCandidateYears');
+
 
             Route::get('monthly-report/{company_id}/{candidate_id}/{month?}','ApiEmployerReportController@monthlyReport');
 
@@ -142,6 +152,7 @@ Route::group([
 
             Route::post('payment-submit/{company_id}/{candidate_id}','ApiEmployerReportController@paymentSubmit');
 
+            Route::get('check-payment-status/{companyid}/{candidateid}/{month}','ApiEmployerReportController@checkPayment');
 
             //overall report
             Route::get('daily/{companyid}', 'ApiEmployerOverallReportController@dailyReport');

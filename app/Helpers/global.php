@@ -298,3 +298,50 @@ function cal_percentage($num_amount, $num_total)
     }
     return 0;
 }
+
+
+
+
+function checkBusinessLeave($include, $array = array())
+{
+
+    if (in_array($include, $array)) {
+        return "Business Leave";
+    }
+    return null;
+}
+
+function checkSpecialHoliday($include, $array = array())
+{
+
+    if (in_array($include, $array)) {
+        return "Special Leave";
+    }
+
+    return null;
+}
+
+
+function checkGovermentHoliday($include, $array = array())
+{
+
+    if (in_array($include, $array)) {
+        return "Goverment Leave";
+    }
+
+    return null;
+}
+
+
+
+function checkAttendance($include, $attendances)
+{
+
+    if ($attendances) {
+        $matchDate = $attendances->where('create_at', $include)->first();
+        if($matchDate){
+            return $matchDate->employee_status;
+        }
+    }
+    return null;
+}

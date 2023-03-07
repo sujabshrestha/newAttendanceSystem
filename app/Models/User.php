@@ -6,6 +6,7 @@ use Candidate\Models\Attendance;
 use Candidate\Models\Candidate;
 use Candidate\Models\CompanyCandidate;
 use Candidate\Models\Leave;
+use Carbon\Carbon;
 use Employer\Models\Company;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,11 +20,6 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -35,9 +31,28 @@ class User extends Authenticatable
 
     ];
 
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+     // Scopes
+    public function scopeEmployers($q){
+        return $q->where('type',"employer");
+    }
+
+    public function scopeCandidateCheck($q){
+        return $q->where('type', 'candidate');
+    }
+
+
+    // Relationships
     public function employerCompany(){
-        return $this->hasOne(Company::class, 'employer_id');
+        return $this->hasMany(Company::class, 'employer_id');
     }
 
 
@@ -49,27 +64,6 @@ class User extends Authenticatable
     public function companyCandidate(){
         return $this->hasMany(CompanyCandidate::class, 'candidate_id');
     }
-
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
 
     public function otp(){
         return $this->hasOne(UserOtp::class, 'user_id');
@@ -83,18 +77,16 @@ class User extends Authenticatable
         return $this->hasOne(Candidate::class, 'user_id');
     }
 
-
-    public function scopeCandidateCheck($q){
-        return $q->where('type', 'candidate');
-    }
-
     public function receivedInvitation(){
         return $this->belongsTo(Invitation::class,'candidate_id','id');
     }
 
     public function receivedCompanyInvitation(){
         $user = Auth::user();
-        return $this->hasMany(Invitation::class,'candidate_id', 'id')->where('company_id', $user->employerCompany->id);
+
+        // dd($user->employerCompany);
+        return $this->hasMany(Invitation::class,'candidate_id','id')->where('company_id', 1)
+        ->where('employer_id', $user->id);
     }
 
 
@@ -104,9 +96,19 @@ class User extends Authenticatable
     }
 
     public function candidateCompanies(){
-        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id');
+        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id')
+        ->withPivot('code','office_hour_start',
+        'office_hour_end', 'status','duty_time', 'salary_amount',
+        'salary_type','overtime');
     }
 
+
+    public function activecandidateCompanies(){
+        return $this->belongsToMany(Company::class,'company_candidates','candidate_id','company_id')
+        ->withPivot('code','office_hour_start',
+        'office_hour_end', 'status','duty_time', 'salary_amount',
+        'salary_type','overtime')->wherePivot('status', 'Active');
+    }
 
 
     public function userCompanies(){
@@ -131,5 +133,35 @@ class User extends Authenticatable
     public function attendances(){
         return $this->hasMany(Attendance::class,'candidate_id','id');
     }
+
+
+    public function todayattendances(){
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereDate('created_at', '=', today());
+    }
+
+
+
+    public function weeklyattendances(){
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereBetween('created_at', [$weekStart, $weekEnd]);
+    }
+
+
+    public function monthlyattendances(){
+        $month = today()->format('m');
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereMonth('created_at', $month);
+    }
+
+
+    public function yearlyattendances(){
+        return $this->hasMany(Attendance::class,'candidate_id','id')
+        ->whereYear('created_at', today()->format('y'));
+    }
+
+
 
 }

@@ -309,7 +309,8 @@ class ApiCandidateReportController extends Controller
             //     ->where('company_id', $companyid)->whereBetween(
             //         'created_at',
             //         [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]
-            //     )->where('employee_status', 'Present')->orWhere('employee_status', 'late')->get()->groupBy(function ($date) {
+            //     )->where('employee_status', 'Present')->orWhere('employee_status', 'late')->get()
+            // ->groupBy(function ($date) {
             //         return Carbon::parse($date->created_at)->format('D');
             //     });
 

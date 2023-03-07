@@ -15,28 +15,25 @@ class CompanyCandidateResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [    
-            'id' => $this->id,
-            'company_id' => $this->company_id,
-            'candidate_id' => $this->candidate_id,
-            'name' => $this->candidate->firstname,
-            'phone' => $this->candidate->phone,
-            'email' => $this->candidate->email,
-            'code' => $this->code,
-            'status' =>  $this->checkAttendanceToday($this),
+        // dd($this->pivot);
+
+        return [
+            'id' => $this->candidate_id,
+            'name' => $this->candidate->firstname ?? null,
+            'code' => $this->code ?? null,
+            'contact' => $this->candidate->phone ?? null,
+            'email' => $this->candidate->email ?? null,
+            'address' => $this->candidate->address ?? null,
+            'joining_date' => Carbon::parse($this->joining_date),
+
+
 
         ];
+
+
+
     }
 
 
-    private function checkAttendanceToday($data)
-    {
 
-        $attendance = $data->candidate->attendances->where('created_at', '>=', Carbon::today())->first();
-        
-        if ($attendance) {
-            return $attendance->employee_status;
-        }
-        return "absent";
-    }
 }

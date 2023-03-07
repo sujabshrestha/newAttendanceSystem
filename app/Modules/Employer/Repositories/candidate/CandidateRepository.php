@@ -94,7 +94,7 @@ class CandidateRepository implements CandidateInterface
                 $companycandidate->duty_time = $request->duty_time;
                 $companycandidate->designation = $request->designation;
                 $companycandidate->joining_date = Carbon::parse($request->joining_date);
-                $companycandidate->allow_late_attendance = $request->allow_late_attendance;
+                $companycandidate->allow_late_attendance = (double) $request->allow_late_attendance;
 
                 $companycandidate->verified_status = 'not_verified';
                 $companycandidate->status = 'Inactive';

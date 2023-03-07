@@ -92,17 +92,17 @@ class AuthEmployerRepository implements AuthEmployerInterface
 
                 $employer = new Employer();
                 $employer->code = 'E-' . Str::random(20);
-                $employer->phone = $request->phone;
+                $employer->phone = $request->phone; 
                 $employer->user_id = $user->id;
 
                 if ($employer->save()) {
-                    // $message = "Please verify using otp: " . $user->otp->otp;
-                    // $sendSms =  $this->sendSms($user->phone, $message);
-                    // if ($sendSms) {
+                    $message = "Please verify using otp: " . $user->otp->otp;
+                    $sendSms =  $this->sendSms($user->phone, $message);
+                    if ($sendSms) {
                     return [
                         'otp' => $user->otp->otp
                     ];
-                    // }
+                    }
                 }
                 throw new Exception("Something went wrong");
             }
@@ -120,9 +120,9 @@ class AuthEmployerRepository implements AuthEmployerInterface
             $otp = $user->otp->otp;
         }
 
-        // $message = "Please verify using otp: " . $otp;
-        // $sendSms =  $this->sendSms($user->phone, $message);
-        // if ($sendSms) {
+        $message = "Please verify using otp: " . $otp;
+        $sendSms =  $this->sendSms($user->phone, $message);
+        if ($sendSms) {
 
 
 
@@ -130,7 +130,7 @@ class AuthEmployerRepository implements AuthEmployerInterface
                 'otp' => $otp,
                 'token' => $token
             ];
-        // }
+        }
     }
 
 

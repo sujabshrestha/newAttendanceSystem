@@ -21,4 +21,9 @@ interface CompanyInterface
     public function getCompaniesByEmployerId();
 
 
+    public function activeCompaniesByEmployerID($id);
+
+    public function inactiveCompaniesByEmployerID($id);
+
+
 }

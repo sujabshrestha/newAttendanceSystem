@@ -30,18 +30,21 @@ class ApiCandidateInvitationController extends Controller
 
     public function allCandidateInvitations(){
         try{
-
-
             $user_id = Auth()->id();
-            $invitations = Invitation::where('candidate_id',$user_id)->where('status','Not-Approved')
+            $invitations = Invitation::where('candidate_id',$user_id)
+            ->where('status','Not-Approved')
                             ->with('company','employer')->latest()->get();
 
             if($invitations){
-                $data = [
-                    'candidateInvitations' => CandidateInvitationResource::collection($invitations)
-                ];
-                return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
+
+                $candidateInvitations = CandidateInvitationResource::collection($invitations);
+
             }
+
+            $data = [
+                'candidateInvitations' =>$candidateInvitations ?? []
+            ];
+            return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
 
         }catch(\Exception $e){
             return $this->response->responseError($e->getMessage());

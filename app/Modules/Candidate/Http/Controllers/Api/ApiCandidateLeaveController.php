@@ -32,8 +32,11 @@ class ApiCandidateLeaveController extends Controller
         try{
             $leaveTypes = LeaveType::get();
 
+            if($leaveTypes){
+                $leavetypes = LeavetypeResource::collection($leaveTypes);
+            }
             $data = [
-                'leaveTypes' => LeavetypeResource::collection($leaveTypes)
+                'leaveTypes' => $leavetypes ?? []
             ];
             return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
 
@@ -48,11 +51,12 @@ class ApiCandidateLeaveController extends Controller
             $user_id = auth()->id();
             $userLeaves = Leave::where('user_id',$user_id)->where('company_id',$company_id)->get();
             if($userLeaves){
-                $data = [
-                    'candidateLeaves' => CandidateLeaveResource::collection($userLeaves)
-                ];
-                return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
+                $candidateLeaves = CandidateLeaveResource::collection($userLeaves);
             }
+            $data = [
+                'candidateLeaves' => $candidateLeaves
+            ];
+            return $this->response->responseSuccess($data, "Successfully Retrieved", 200);
 
         }catch(\Exception $e){
             return $this->response->responseError($e->getMessage());

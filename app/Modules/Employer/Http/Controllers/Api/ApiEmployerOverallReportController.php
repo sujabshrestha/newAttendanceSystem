@@ -67,15 +67,22 @@ class ApiEmployerOverallReportController extends Controller
             }
             )->count();
 
+<<<<<<< HEAD
             $totalPresentToday = $presentCount ?? 0 +  $lateCount ?? 0;
+=======
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             $data = [
                 'total_attendee' =>   $totalattendee ?? 0,
                 'present' => $presentCount ?? 0,
                 'absent' => $absentCount ?? 0,
                 'late' => $lateCount ?? 0,
                 'punch_out' => $punchOutCount ?? 0,
+<<<<<<< HEAD
                 'leave' => $LeaveCount ?? 0,
                 'percentage' => cal_percentage($totalPresentToday, $totalattendee) ?? 0
+=======
+                'leave' => $LeaveCount ?? 0
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
@@ -137,15 +144,23 @@ class ApiEmployerOverallReportController extends Controller
                 });
             }
             )->count();
+<<<<<<< HEAD
             $totalPresentToday = $presentCount ?? 0 +  $lateCount ?? 0;
+=======
+
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             $data = [
                 'total_attendee' =>   $totalattendee ?? 0,
                 'present' => $presentCount ?? 0,
                 'absent' => $absentCount ?? 0,
                 'late' => $lateCount ?? 0,
                 'punch_out' => $punchOutCount ?? 0,
+<<<<<<< HEAD
                 'leave' => $LeaveCount ?? 0,
                 'percentage' => cal_percentage($totalPresentToday, $totalattendee)
+=======
+                'leave' => $LeaveCount ?? 0
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
@@ -213,15 +228,23 @@ class ApiEmployerOverallReportController extends Controller
                 });
             }
             )->count();
+<<<<<<< HEAD
             $totalPresentToday = $presentCount ?? 0 +  $lateCount ?? 0;
+=======
+
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             $data = [
                 'total_attendee' =>   $totalattendee ?? 0,
                 'present' => $presentCount ?? 0,
                 'absent' => $absentCount ?? 0,
                 'late' => $lateCount ?? 0,
                 'punch_out' => $punchOutCount ?? 0,
+<<<<<<< HEAD
                 'leave' => $LeaveCount ?? 0,
                 'percentage' => cal_percentage($totalPresentToday, $totalattendee)
+=======
+                'leave' => $LeaveCount ?? 0
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
@@ -289,15 +312,23 @@ class ApiEmployerOverallReportController extends Controller
                 });
             }
             )->count();
+<<<<<<< HEAD
             $totalPresentToday = $presentCount ?? 0 +  $lateCount ?? 0;
+=======
+
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             $data = [
                 'total_attendee' =>   $totalattendee ?? 0,
                 'present' => $presentCount ?? 0,
                 'absent' => $absentCount ?? 0,
                 'late' => $lateCount ?? 0,
                 'punch_out' => $punchOutCount ?? 0,
+<<<<<<< HEAD
                 'leave' => $LeaveCount ?? 0,
                 'percentage' => cal_percentage($totalPresentToday, $totalattendee)
+=======
+                'leave' => $LeaveCount ?? 0
+>>>>>>> e67b342b62d3290c556b5bccb97256910ff64776
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);

@@ -7,9 +7,11 @@
 <link href="{{ asset('backendfiles/assets/css/plugins.css') }}" rel="stylesheet" type="text/css" />
 <!-- END GLOBAL MANDATORY STYLES -->
 
-<!-- BEGIN PAGE LEVEL PLUGINS/CUSTOM STYLES -->
-<link href="{{ asset('backendfiles/plugins/apex/apexcharts.css') }}" rel="stylesheet" type="text/css">
-<link href="{{ asset('backendfiles/assets/css/dashboard/dash_1.css') }}" rel="stylesheet" type="text/css" />
+{{-- Sweet Alerts --}}
+{{-- <link href="{{ asset('backendfiles/plugins/sweetalerts/sweetalert2.min.css') }}" rel="stylesheet" type="text/css" /> --}}
+<link href="{{ asset('backendfiles/plugins/sweetalerts/sweetalert.css') }}" rel="stylesheet" type="text/css" />
+{{-- <link href="{{ asset('backendfiles/assets/css/components/custom-sweetalert.css') }}" rel="stylesheet" type="text/css" /> --}}
+
 
 <link rel="stylesheet" href="http://cdn.bootcss.com/toastr.js/latest/css/toastr.min.css">
 
@@ -18,7 +20,7 @@
 <link href="{{ asset('backendfiles/plugins/table/datatable/dt-global_style.css') }}" rel="stylesheet" type="text/css" >
 
 {{-- Summernote css/js --}}
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
 
 {{-- FileUpload --}}
 <link href="{{ asset('backendfiles/plugins/file-upload/file-upload-with-preview.min.css') }}" rel="stylesheet" type="text/css" />

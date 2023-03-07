@@ -88,11 +88,12 @@ class ApiAttendanceController extends Controller
                     ->latest()->get();
                 if ($candidates) {
                     $candidates =  CandidateResource::collection($candidates);
-                    $data = [
-                        'candidates' => $candidates ?? []
-                    ];
-                    return $this->response->responseSuccess($data, "Success", 200);
+
                 }
+                $data = [
+                    'candidates' => $candidates ?? []
+                ];
+                return $this->response->responseSuccess($data, "Success", 200);
             }
             return $this->response->responseError("COmpany doesn't exists");
         } catch (\Exception $e) {

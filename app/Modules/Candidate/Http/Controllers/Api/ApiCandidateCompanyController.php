@@ -26,13 +26,14 @@ class ApiCandidateCompanyController extends Controller
 
 
             if ($user) {
-                $data = [
-                    'companies' => CompanyResource::collection($user->companiesByCandidateID)
-                ];
-
-                return $this->response->responseSuccess($data, "Success", 200);
+                $companies = CompanyResource::collection($user->companiesByCandidateID);
             }
-            return $this->response->responseError("Candidate not found");
+            $data = [
+                'companies' =>$companies ?? []
+            ];
+
+            return $this->response->responseSuccess($data, "Success", 200);
+
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }

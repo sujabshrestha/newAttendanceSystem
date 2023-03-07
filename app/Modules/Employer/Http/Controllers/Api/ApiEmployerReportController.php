@@ -7,14 +7,21 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CompanyCandidateResource;
 use App\Http\Resources\YearlyEarningResource;
+use App\Models\CompanyGovernmentleave;
+use App\Models\CompanySpecialleave;
 use App\Models\User;
 use Candidate\Http\Resources\CandidateResource;
 use Candidate\Models\Attendance;
 use Candidate\Models\Candidate;
+use Candidate\Models\CompanyBusinessleave;
 use Candidate\Models\CompanyCandidate;
 use Candidate\Models\Leave;
 use Carbon\Carbon;
+use DateInterval;
+use DatePeriod;
 use Employer\Http\Resources\CompanyCandidateDailyAttendanceReport;
+use Employer\Http\Resources\CompanyPaymentReportResource;
+use Employer\Http\Requests\PaymentStoreRequest;
 use Employer\Models\Company;
 use Employer\Models\Payment;
 use Exception;
@@ -210,89 +217,224 @@ class ApiEmployerReportController extends Controller
 
 
 
-    public function dailyReport($companyid, $candidateid){
-        try{
-            $attendance = Attendance::where('candidate_id', $candidateid)
-            ->where('company_id', $companyid)
-            ->where('create_at', Carbon::today())
-            ->where(function($q){
-                $q->whereIn('employee_status', ['Present', 'late', 'Leave']);
-            })
-            ->first();
+    public function dailyReport($companyid, $candidateid)
+    {
+        try {
 
-            if($attendance){
-                $status = 'present';
-            }else{
-                $status = 'absent';
+            $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+            $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+            $candidate = CompanyCandidate::where('candidate_id', $candidateid)->first();
+            if ($candidate) {
+                $attendances = Attendance::where('candidate_id', $candidateid)->where('company_id', $companyid)->whereBetween('created_at', [$weekStart, $weekEnd])->get();
+
+                $companyBusinessLeave = CompanyBusinessleave::where('company_id', $candidate->company_id)->get()
+                    ->pluck('business_leave_id')->toArray();
+
+                $companySpecialLeave = CompanySpecialleave::where('company_id', $candidate->company_id)
+                    ->whereBetween('leave_date', [$weekStart, $weekEnd])->get()->pluck('leave_date')->toArray();
+                $companyGovermentLeave = CompanyGovernmentleave::where('company_id', $candidate->company_id)
+                    ->whereBetween('leave_date', [$weekStart, $weekEnd])->get()->pluck('leave_date')->toArray();
+                $reportData = [];
+                for ($i = 0; $i <= 6; $i++) {
+                    $day = $weekStart->copy()->addDays($i);
+                    $WeekDayNumber = $day->format('w') + 1;
+                    $checkAttendance = checkAttendance($day, $attendances);
+                    $checkBusinessLeave = checkBusinessLeave($WeekDayNumber, $companyBusinessLeave);
+                    $checkSpecialHoliday = checkSpecialHoliday($day->format('Y-m-d'), $companySpecialLeave);
+                    $checkGovermentHoliday = checkGovermentHoliday($day->format('Y-m-d'), $companyGovermentLeave);
+                    if ($checkAttendance) {
+                        $reportData[$day->format('Y-m-d')] = $checkAttendance;
+                    } elseif ($checkBusinessLeave) {
+                        $reportData[$day->format('Y-m-d')] = $checkBusinessLeave;
+                    } elseif ($checkSpecialHoliday) {
+                        $reportData[$day->format('Y-m-d')] = $checkSpecialHoliday;
+                    } elseif ($checkGovermentHoliday) {
+                        $reportData[$day->format('Y-m-d')] = $checkGovermentHoliday;
+                    } else {
+                        $reportData[$day->format('Y-m-d')] = "Absent";
+                    }
+                }
+
+                // dd($reportData);
+
+                $attendance = Attendance::where('candidate_id', $candidateid)
+                    ->where('company_id', $companyid)
+                    ->where('created_at', Carbon::today())
+                    ->where(function ($q) {
+                        $q->whereIn('employee_status', ['Present', 'late', 'Leave']);
+                    })
+                    ->first();
+
+                if ($attendance) {
+                    $startime = $attendance->start_time;
+                    $endtime = $attendance->end_time;
+                    $totalearning = $attendance->earning + $attendance->overtime_earning;
+                    $status = 'present';
+                } else {
+
+                    $status = 'absent';
+                }
+
+
+                // $startdate = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+                // $enddate = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+
+
+                // $week_dates = getDatesFromRange($startdate->format('Y-m-d'), $enddate->format('Y-m-d'));
+                // foreach($week_dates as $date){
+
+                //     if(Carbon::parse($date)->isSunday()){
+                //         $status = 'holiday';
+                //     }elseif(Carbon::parse($date)->isSaturday()){
+                //         $status = 'holiday';
+                //     }
+                //     elseif(isset($attendance) && $attendance->created_at->format('Y-m-d') == $date){
+                //         $status = "present";
+                //     }else{
+                //         $status = "absent";
+                //     }
+
+                //     $newweek_dates[$date] = [
+                //         'status' => $status
+                //     ];
+                // }
+
+
+
+
+                $data = [
+                    'weekly_datas' => $reportData,
+                    'start_time' => isset($startime) ? $startime : null,
+                    'end_time' => isset($endtime) ? $endtime : null,
+                    'break_time' => isset($attendance) ? $attendance->breakDuration : null,
+                    'attendance_duration' => isset($attendance) ? $attendance->attendanceDuration : null,
+                    'earning' => isset($attendance) ? $attendance->earning  : null,
+                    'overtime_earning' => isset($attendance) ? $attendance->overtime_earning  : null,
+                    'totalearning' => $totalearning  ?? null,
+
+                ];
+                return $this->response->responseSuccess($data, "Success", 200);
             }
-
-        }catch(\Exception $e){
+            return $this->response->responseError("Candidate doesn't exists");
+        } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
     }
 
+
+    // get all candidate join months
+    public function getAllCompanyCandidateMonths($companyid, $candidateid)
+    {
+        try {
+
+            $companycandidate = CompanyCandidate::where('company_id', $companyid)
+                ->where('candidate_id', $candidateid)
+                ->where('verified_status', 'verified')
+                ->where('status', 'Active')
+                ->first();
+            if ($companycandidate) {
+
+
+
+                $start =  $companycandidate->updated_at;
+
+                $end  =  Carbon::now();
+
+                $interval = DateInterval::createFromDateString('1 month');
+                $period   = new DatePeriod($start, $interval, $end);
+
+                $months = [];
+                foreach ($period as $dt) {
+                    $months[] =  [
+                        'month' => $dt->format("Y-m-d")
+                    ];
+                    // $months[] =  $dt->format("Y-m-d") . "<br>\n";
+                }
+                $data = $months;
+                return $this->response->responseSuccess($data, "Success", 200);
+            }
+            return $this->response->responseError("Company Candidate not found");
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
+    // get all candidate join months
+    public function getAllCompanyCandidateYears($companyid, $candidateid)
+    {
+        try {
+
+            $companycandidate = CompanyCandidate::where('company_id', $companyid)
+                ->where('candidate_id', $candidateid)
+                ->where('verified_status', 'verified')
+                ->where('status', 'Active')
+                ->first();
+            if ($companycandidate) {
+                $years = [];
+
+
+                for ($date = $companycandidate->updated_at->copy(); $date->lte(Carbon::now()); $date->addYear()) {
+                    $years[] = [
+                        'year' => $date->format('Y-m-d')
+                    ];
+                }
+                $data = $years;
+                return $this->response->responseSuccess($data, "Success", 200);
+            }
+            return $this->response->responseError("Company Candidate not found");
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
 
 
     public function weeklyReport($companyid, $candidate_id)
     {
         try {
 
-           
-
-
             $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
             $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
-            $attendanceData = DB::table('attendances')
-                ->join('company_specialleaves', function ($join) use ($weekStart, $weekEnd) {
-                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
-                        ->whereBetween('company_specialleaves.leave_date', [$weekStart, $weekEnd]);
-                })
-                ->join('company_governmentleaves', function ($join) use ($weekStart, $weekEnd) {
-                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
-                        ->whereBetween('company_governmentleaves.leave_date', [$weekStart, $weekEnd]);
-                })
-                ->join('company_businessleaves', function ($join) {
-                    $join->on('attendances.company_id', '=', 'company_businessleaves.company_id');
-                })
+            $candidate = CompanyCandidate::where('candidate_id', $candidate_id)->first();
+            $attendances = Attendance::where('candidate_id', $candidate_id)->where('company_id', $companyid)->whereBetween('created_at', [$weekStart, $weekEnd])->get();
+            $companyBusinessLeave = CompanyBusinessleave::where('company_id', $candidate->company_id)->get()
+                ->pluck('business_leave_id')->toArray();
 
-                // ->where('attendances.candidate_id', '=', $candidate_id)
-                // ->where('attendances.company_id', '=', $companyid)
-
-                ->select(
-                    DB::raw("Date(attendances.created_at) as attendance_day"),
-                    'attendances.employee_status',
-                    DB::raw("(company_businessleaves.business_leave_id - 1) as business_date")
-                )
-                ->get();
-
-
-                dd($attendanceData);
+            $companySpecialLeave = CompanySpecialleave::where('company_id', $candidate->company_id)
+                ->whereBetween('leave_date', [$weekStart, $weekEnd])->get()->pluck('leave_date')->toArray();
+            $companyGovermentLeave = CompanyGovernmentleave::where('company_id', $candidate->company_id)
+                ->whereBetween('leave_date', [$weekStart, $weekEnd])->get()->pluck('leave_date')->toArray();
             $reportData = [];
             for ($i = 0; $i <= 6; $i++) {
                 $day = $weekStart->copy()->addDays($i);
-                // dd($day);
-
-                $reportData[$day->format('Y-m-d')] = 'Absent';
-                foreach ($attendanceData as $data) {
-                    // dd($day->format('w'));
-                    // dd($data->business_date);
-                    if ($day->format('Y-m-d') == $data->attendance_day) {
-                        $reportData[$day->format('Y-m-d')] = $data->employee_status;
-                    } elseif ($day->format('Y-m-d') == $data->special_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Special Holiday';
-                    } elseif ($day->format('Y-m-d') == $data->goverment_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Government Holiday';
-                    } elseif ($day->format('w') == $data->business_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Business Holiday';
-                    }
+                $WeekDayNumber = $day->format('w') + 1;
+                $checkAttendance = checkAttendance($day, $attendances);
+                $checkBusinessLeave = checkBusinessLeave($WeekDayNumber, $companyBusinessLeave);
+                $checkSpecialHoliday = checkSpecialHoliday($day->format('Y-m-d'), $companySpecialLeave);
+                $checkGovermentHoliday = checkGovermentHoliday($day->format('Y-m-d'), $companyGovermentLeave);
+                if ($checkAttendance) {
+                    $reportData[$day->format('Y-m-d')] = $checkAttendance;
+                } elseif ($checkBusinessLeave) {
+                    $reportData[$day->format('Y-m-d')] = $checkBusinessLeave;
+                } elseif ($checkSpecialHoliday) {
+                    $reportData[$day->format('Y-m-d')] = $checkSpecialHoliday;
+                } elseif ($checkGovermentHoliday) {
+                    $reportData[$day->format('Y-m-d')] = $checkGovermentHoliday;
+                } else {
+                    $reportData[$day->format('Y-m-d')] = "Absent";
                 }
             }
+            // dd($reportData);
+
+
+
 
             $reportDataCollection = collect($reportData);
 
             $absentdates = array_filter($reportData, function ($var) {
                 return ($var == "Absent");
             });
+
 
             foreach ($absentdates as $key => $value) {
                 $attendance = Attendance::updateOrCreate([
@@ -318,35 +460,35 @@ class ApiEmployerReportController extends Controller
             $companyCandidate = CompanyCandidate::where('company_id', $companyid)
                 ->where('candidate_id', $candidate_id)->first();
 
-            if($companyCandidate){
-                $candidateMonthlySalary = $companyCandidate->salary_amount;
+            // if($companyCandidate){
+            $candidateMonthlySalary = $companyCandidate->salary_amount;
 
-                $numberOfDaysInMonth = Carbon::now()->daysInMonth;
-                $weekInCurrentMonth = (int) $this->weeksInMonth($numberOfDaysInMonth);
+            $numberOfDaysInMonth = Carbon::now()->daysInMonth;
+            $weekInCurrentMonth = (int) $this->weeksInMonth($numberOfDaysInMonth);
 
-                $daysInCurrentMonth = (int) Carbon::parse(today())->daysInMonth;
+            $daysInCurrentMonth = (int) Carbon::parse(today())->daysInMonth;
 
-                $salaryInWeek = (float)$candidateMonthlySalary / $weekInCurrentMonth;
-                $salaryPerDay = (float)$candidateMonthlySalary / $daysInCurrentMonth;
+            $salaryInWeek = (float)$candidateMonthlySalary / $weekInCurrentMonth;
+            $salaryPerDay = (float)$candidateMonthlySalary / $daysInCurrentMonth;
 
-                $salaryCountingdays = 7 - $absentCount;
+            $salaryCountingdays = 7 - $absentCount;
 
-                $currentweekSalary = floor($salaryCountingdays * $salaryPerDay);
+            $currentweekSalary = floor($salaryCountingdays * $salaryPerDay);
 
-                $data = [
-                    'present' =>  $presentCount ?? 0,
-                    'absent' => $absentcount ?? 0,
-                    'leave' => $leaveCount ?? 0,
-                    'weekdata ' =>  $reportDataCollection   ?? [],
-                    'businessleaveCount' => $businessleaveCount ?? 0,
-                    'governmentLeaveCount' => $governmentleaveCount ?? 0,
-                    'specialLeaveCount' => $specialleaveCount ?? 0,
-                    'current_week_salary' => $currentweekSalary
-                ];
+            $data = [
+                'present' =>  $presentCount ?? 0,
+                'absent' => $absentcount ?? 0,
+                'leave' => $leaveCount ?? 0,
+                'weekly_datas' =>  $reportDataCollection   ?? [],
+                'businessleaveCount' => $businessleaveCount ?? 0,
+                'governmentLeaveCount' => $governmentleaveCount ?? 0,
+                'specialLeaveCount' => $specialleaveCount ?? 0,
+                'current_week_salary' => $currentweekSalary
+            ];
 
-                return $this->response->responseSuccess($data, "Success", 200);
-            }
-            return $this->response->responseError("Company not found");
+            return $this->response->responseSuccess($data, "Success", 200);
+            // }
+            // return $this->response->responseError("Company not found");
 
         } catch (Exception  $e) {
             return $this->response->responseError($e->getMessage());
@@ -358,85 +500,60 @@ class ApiEmployerReportController extends Controller
         try {
 
 
-            if ($month == null && $month == 0) {
-                $month = now()->format('m');
-                // $startDate = Carbon::parse(Carbon::now()->startOfMonth());
-                // $endDate = Carbon::parse(Carbon::now());
-                $totaldays = Carbon::now()->daysInMonth;
-                // $today = Carbon::today()->format('d');
-                $monthStart = Carbon::now()->startOfMonth();
-                $monthEnd = Carbon::now();
-            } else {
-                $year = date("Y");
-                $date = $year . '/' . $month . '/' . '1';
-                $totaldays = Carbon::parse($date)->daysInMonth;
 
 
-                $monthStart = Carbon::createFromFormat('Y/m/d', $date)
-                    ->firstOfMonth()
-                    ->format('Y-m-d');
-                $monthStart = Carbon::parse($monthStart);
+            $date = $month;
+
+            $totaldays = Carbon::parse($date)->daysInMonth;
+
+            // dd($totaldays);
+            $monthStart = Carbon::parse($date)
+                ->firstOfMonth();
 
 
-                $monthEnd = Carbon::createFromFormat('Y/m/d', $date)
-                    ->endOfMonth()
-                    ->format('Y-m-d');
-                $monthEnd = Carbon::parse($monthEnd);
-            }
+            $monthEnd = Carbon::parse($date)
+                ->endOfMonth();
+
+
             // dd($candidate_id, $companyid);
 
             // dd($monthStart, $monthEnd);
 
-            $attendanceData = DB::table('attendances')
-                ->join('company_specialleaves', function ($join) use ($monthStart, $monthEnd) {
-                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
-                        ->whereBetween('company_specialleaves.leave_date', [$monthStart, $monthEnd]);
-                })
-                ->join('company_governmentleaves', function ($join) use ($monthStart, $monthEnd) {
-                    $join->on('attendances.company_id', '=', 'company_specialleaves.company_id')
-                        ->whereBetween('company_governmentleaves.leave_date', [$monthStart, $monthEnd]);
-                })
-                ->join('company_businessleaves', function ($join) {
-                    $join->on('attendances.company_id', '=', 'company_businessleaves.company_id');
-                })
 
-                ->where('attendances.candidate_id', '=', $candidate_id)
-                ->where('attendances.company_id', '=', $companyid)
+            $candidate = CompanyCandidate::where('candidate_id', $candidate_id)->first();
+            $attendances = Attendance::where('candidate_id', $candidate_id)->where('company_id', $companyid)
+                ->whereBetween('created_at', [$monthStart, $monthEnd]);
 
-                ->select(
-                    DB::raw("Date(attendances.created_at) as attendance_day"),
-                    'attendances.employee_status',
-                    DB::raw("Date(company_specialleaves.leave_date) as special_date"),
-                    DB::raw("Date(company_governmentleaves.leave_date) as goverment_date"),
-                    DB::raw("(company_businessleaves.business_leave_id - 1) as business_date")
-                )
-                ->get();
-            // dd($attendanceData);
+            $totalearning = $attendances->sum('earning');
+            $attendances = $attendances->get();
+
+            $companyBusinessLeave = CompanyBusinessleave::where('company_id', $candidate->company_id)->get()
+                ->pluck('business_leave_id')->toArray();
+
+            $companySpecialLeave = CompanySpecialleave::where('company_id', $candidate->company_id)
+                ->whereBetween('leave_date', [$monthStart, $monthEnd])->get()->pluck('leave_date')->toArray();
+            $companyGovermentLeave = CompanyGovernmentleave::where('company_id', $candidate->company_id)
+                ->whereBetween('leave_date', [$monthStart, $monthEnd])->get()->pluck('leave_date')->toArray();
             $reportData = [];
-            for ($i = 0; $i <= (int) ($totaldays - 1); $i++) {
+            for ($i = 0; $i <= $totaldays; $i++) {
                 $day = $monthStart->copy()->addDays($i);
-                // dd($day);
-
-                $reportData[$day->format('Y-m-d')] = 'Absent';
-                foreach ($attendanceData as $data) {
-                    // dd($day->format('w'));
-                    // dd($data->business_date);
-                    if ($day->format('Y-m-d') == $data->attendance_day) {
-                        $reportData[$day->format('Y-m-d')] = $data->employee_status;
-                    } elseif ($day->format('Y-m-d') == $data->special_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Special Holiday';
-                    } elseif ($day->format('Y-m-d') == $data->goverment_date) {
-                        $reportData[$day->format('Y-m-d')] = 'Government Holiday';
-                    } elseif ($day->format('w') == $data->business_date) {
-                        // dd('sadsad');
-
-                        $reportData[$day->format('Y-m-d')] = 'Business Holiday';
-                    }
+                $WeekDayNumber = $day->format('w') + 1;
+                $checkAttendance = checkAttendance($day, $attendances);
+                $checkBusinessLeave = checkBusinessLeave($WeekDayNumber, $companyBusinessLeave);
+                $checkSpecialHoliday = checkSpecialHoliday($day->format('Y-m-d'), $companySpecialLeave);
+                $checkGovermentHoliday = checkGovermentHoliday($day->format('Y-m-d'), $companyGovermentLeave);
+                if ($checkAttendance) {
+                    $reportData[$day->format('Y-m-d')] = $checkAttendance;
+                } elseif ($checkBusinessLeave) {
+                    $reportData[$day->format('Y-m-d')] = $checkBusinessLeave;
+                } elseif ($checkSpecialHoliday) {
+                    $reportData[$day->format('Y-m-d')] = $checkSpecialHoliday;
+                } elseif ($checkGovermentHoliday) {
+                    $reportData[$day->format('Y-m-d')] = $checkGovermentHoliday;
+                } else {
+                    $reportData[$day->format('Y-m-d')] = "Absent";
                 }
             }
-
-
-
 
 
 
@@ -467,11 +584,11 @@ class ApiEmployerReportController extends Controller
                     $q->where('title', 'Sick');
                 })
                 ->where('approved', 1)
-                ->whereMonth('created_at',$month)
+                ->whereMonth('created_at', $month)
                 ->get();
 
             $counter = 0;
-            foreach($Sickleaves as $sickleave){
+            foreach ($Sickleaves as $sickleave) {
                 $counter = $counter + (int) Carbon::parse($sickleave->start_date)->diffInDays(Carbon::parse($sickleave->end_date));
             }
 
@@ -480,7 +597,7 @@ class ApiEmployerReportController extends Controller
 
             $company_totalavailablesickleave =  $company->leave_duration ?? null;
 
-            if(isset($company_totalavailablesickleave)  && isset($counter)){
+            if (isset($company_totalavailablesickleave)  && isset($counter)) {
                 $totalsickdaysleft = $company_totalavailablesickleave - $counter;
             }
 
@@ -562,12 +679,122 @@ class ApiEmployerReportController extends Controller
                 'businessleavedays' => $businessleaveCount ?? 0,
                 'governmentLeavedaysCount' => $governmentleaveCount ?? 0,
                 'specialLeavedaysCount' => $specialleaveCount ?? 0,
-                'salary' => 20000,
-                'total_leave' => $company_totalavailablesickleave,
+                'salary' => $totalearning ?? 0,
+                'total_leave' => $company_totalavailablesickleave ?? 7,
                 'total_available' => $totalsickdaysleft ?? 0,
                 'taken' => $counter ?? 0
 
 
+            ];
+
+            return $this->response->responseSuccess($data, "Success", 200);
+        } catch (\Exception $e) {
+            return $this->response->responseError($e->getMessage());
+        }
+    }
+
+
+    public function filterReport($companyid, $year, $month)
+    {
+        try {
+
+            //paid candidate of this month
+            $paymentReport = Payment::where('company_id', $companyid)
+                // ->where('candidate_id', $candidateid)
+                ->whereYear('payment_date', $year)
+                ->whereMonth('payment_date', $month)
+                ->with('candidate')
+                ->get();
+
+
+            //paid candidate id of this month
+            if ($paymentReport->count() > 0) {
+                $payedCandidate = $paymentReport->pluck('candidate_id')->toArray();
+            } else {
+                $payedCandidate = [];
+            }
+
+
+            //unpaid candidate
+            if (isset($payedCandidate) && !empty($payedCandidate)) {
+
+                $unpaidcompanycandidate = CompanyCandidate::where('company_id', $companyid)
+                    ->where('status', 'Active')
+                    ->where('verified_status', 'verified')
+                    ->whereNotIn('candidate_id', [$payedCandidate])
+                    ->with('candidate')
+                    ->get();
+
+
+                $newpaidCandidate = [];
+
+                foreach ($paymentReport as $payedcandidate) {
+                    $newpaidCandidate[] = [
+                        'id' => $payedcandidate->candidate->id,
+                        'name' => $payedcandidate->candidate->firstname ?? $payedcandidate->candidate->phone,
+                        'status' => 'paid',
+                        'amount' => $payedcandidate->paid_amount
+                    ];
+                }
+
+
+
+
+                $newUnpaidCandidate = [];
+                foreach ($unpaidcompanycandidate as $unpaidCandidate) {
+                    $newUnpaidCandidate[] = [
+                        'id' => $unpaidCandidate->candidate->id,
+                        'name' => $unpaidCandidate->candidate->firstname ?? $unpaidCandidate->candidate->phone ?? null,
+                        'status' => "unpaid",
+                        'amount' => $unpaidCandidate->salary_amount ?? null
+                    ];
+                }
+
+
+
+
+                $paidUnpaidCandidates = array_merge($newpaidCandidate, $newUnpaidCandidate);
+                $balance = 0;
+                foreach ($paidUnpaidCandidates as $candidate) {
+                    $balance = $balance + (float)$candidate['amount'];
+                }
+
+
+
+                // $balance = $unpaidcompanycandidate->sum('salary_amount');
+                // dd(collect());
+
+
+
+            } else {
+
+                $unpaidcompanycandidate = CompanyCandidate::where('company_id', $companyid)
+                    ->where('status', 'Active')
+                    ->where('verified_status', 'verified')
+                    // ->whereNotIn('candidate_id', [$payedCandidate])
+                    ->with('candidate')
+                    ->get();
+                foreach ($unpaidcompanycandidate as $unpaidCandidate) {
+                    $paidUnpaidCandidates[] = [
+                        'id' => $unpaidCandidate->candidate->id,
+                        'name' => $unpaidCandidate->candidate->firstname ?? $unpaidCandidate->candidate->phone ?? null,
+                        'status' => "unpaid",
+                        'amount' => $unpaidCandidate->salary_amount ?? null
+                    ];
+                }
+                $balance = $unpaidcompanycandidate->sum('salary_amount');
+            }
+
+
+
+            if (isset($paidUnpaidCandidates) && !empty($paidUnpaidCandidates)) {
+                $paidUnpaidCandidates = CompanyPaymentReportResource::collection($paidUnpaidCandidates);
+            } else {
+                $paidUnpaidCandidates = [];
+            }
+            $data = [
+                'candidates' => $paidUnpaidCandidates,
+                'balance' => $balance
             ];
 
             return $this->response->responseSuccess($data, "Success", 200);
@@ -585,86 +812,52 @@ class ApiEmployerReportController extends Controller
                 $year = date('Y');
             }
 
-            // $month = DB::table('attendances')
-            // ->select('candidate_id', 'company_id', DB::raw('SUM(earning) AS total_earning'))
-            // ->get();
-
-
-            // $month = Attendance::select(DB::raw('earning as earnings'), 'candidate_id', 'company_id', 'candidate_id')
-            // ->select(DB::raw('company_id,candidate_id'))
-            // ->selectRaw('year(created_at) year, monthname(created_at) month')
-            //  ->groupBy('year', 'month')
-            // ->get();
-            // dd($month);
-
-
-
-            // dd($month);
-            // $month = DB::table('attendances')
-            // ->where('company_id', $companyid)
-            // ->where('candidate_id', $candidate_id)
-            // ->select(DB::raw('SUM(earning) as total_earning, DATE(created_at) as created_date'))
-            // ->groupBy(DB::raw('DATE(created_at)'))
-            // ->get();
-            // dd($month);
-
-
-            // $monthly = Attendance::select('id')->whereYear('created_at',2023)
-            // ->select(DB::raw("(sum(earning)) as earning"), DB::raw("GROUP_CONCAT(DISTINCT candidate_id) as candidate"),
-            //     DB::raw("GROUP_CONCAT(DISTINCT company_id) as company"))
-
-
-            // ->groupBy(DB::raw("DATE_FORMAT(created_at,'%M')"))
-            // ->get();
-            // dd($monthly);
-
-            $datas = Attendance::where('candidate_id', $candidate_id)
-                ->where('company_id', $companyid)
-                // ->select('company_id', 'candidate_id')
-
-                // ->selectRaw('year(created_at) year, monthname(created_at) month, sum(earning) as total_earning ')
-                ->select(
-                    DB::raw("(sum(earning)) as total_earning"),
-                    DB::raw("GROUP_CONCAT(DISTINCT candidate_id) as candidate"),
-                    DB::raw("GROUP_CONCAT(DISTINCT company_id) as company"),
-                    DB::raw("DATE_FORMAT(created_at,'%M') as month")
-                )
-
-
-
-                // ->groupBy('year', 'month')
-                ->groupBy(DB::raw("DATE_FORMAT(created_at,'%M')"))
-                // ->orderBy('year', 'desc')
-                ->get();
-            // ->groupBy(function ($date) {
-            //     return Carbon::parse($date->created_at)->format('M');
-            // });
-            dd($datas->pluck('month')->toArray());
-
-            // foreach($datas as $data ){
-            //     if($data->month )
-            // }
-
-
-            $data = [
-                'datas' => YearlyEarningResource::collection($datas)
+            $allmonths = [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Nov", "Dec"
             ];
-            return $this->response->responseSuccess($data, "Success", 200);
+
+            $companycandidate = CompanyCandidate::where('company_id', $companyid)
+                ->where('candidate_id', $candidate_id)->where('verified_status', 'verified')
+                ->where('status', 'Active')->first();
+            if ($companycandidate) {
+                $payments = Payment::where('company_id', $companyid)
+                    ->where('candidate_id', $candidate_id)->whereYear('payment_for_month', $year)->get();
+
+
+                $attendances = Attendance::where('company_id', $companyid)
+                    ->where('candidate_id', $candidate_id)->whereYear('created_at', $year)->get();
+                $monthData = [];
+                foreach ($allmonths as $month) {
+                    $monthData[$month] = $payments->where('payment_for_month', $month)->first();
+                }
+
+                $datas = ['Jan'];
+
+
+
+                $data = [
+                    'monthly_datas' => YearlyEarningResource::collection($datas),
+                    'total' => 50000
+                ];
+                return $this->response->responseSuccess($data, "Success", 200);
+            }
+            return $this->response->responseError("Candidate dees not exists");
         } catch (\Exception $e) {
             return $this->response->responseError($e->getMessage());
         }
     }
 
 
-    public function paymentSubmit(Request $request, $company_id, $candidate_id)
+    public function paymentSubmit(PaymentStoreRequest $request, $company_id, $candidate_id)
     {
         try {
-
             $payment = new Payment();
-            $payment->status = 'Paid';
+            $payment->status = $request->status;
             $payment->paid_amount = $request->paid_amount;
+            $payment->bonus = $request->bonus;
             $payment->payment_date = Carbon::now();
-            $payment->payment_for_month = $request->payment_for_month;
+            $payment->allowance_type = $request->allowance_type;
+            $payment->payment_for_month = Carbon::now();
             $payment->company_id = $company_id;
             $payment->candidate_id = $candidate_id;
             $payment->employer_id = Auth::id();

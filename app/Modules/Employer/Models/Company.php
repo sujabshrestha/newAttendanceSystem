@@ -28,7 +28,10 @@ class Company extends Model
         'email',
         'working_days',
         'office_hour_start',
-        'office_hour_end'
+        'office_hour_end',
+        'leave_duration_type',
+        'leave_duration',
+        'probation_duration'
     ];
 
     protected $time =[
@@ -36,6 +39,26 @@ class Company extends Model
         'office_hour_end'
     ];
 
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'name'
+            ]
+        ];
+    }
+
+
+    // Scopes
+    public function scopeActive($q){
+        return $q->where('status',"Active");
+    }
+
+    public function scopeInative($q){
+        return $q->where('status',"Inactive");
+    }
+
+    // Relationships
     public function employer(){
         return $this->belongsTo(User::class, 'employer_id');
     }
@@ -77,24 +100,22 @@ class Company extends Model
     public function candidatesByCompanyID($companyid = null){
         // dd($this->id,$this->company_id);
         // dd($companyid);
-        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')->withPivot('code','office_hour_start',
+        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')
+        ->withPivot('code','office_hour_start',
         'office_hour_end', 'status','duty_time', 'salary_amount',
-        'salary_type','overtime')->distinct();
+        'salary_type','overtime');
+    }
+
+
+    public function activecandidatesByCompanyID(){
+        return $this->belongsToMany(User::class, 'company_candidates', 'company_id', 'candidate_id')
+        ->withPivot('code','office_hour_start',
+        'office_hour_end', 'status','duty_time', 'salary_amount',
+        'salary_type','overtime')->wherePivot('status', 'Active');
     }
 
     public function users(){
         return $this->belongsToMany(User::class, 'company_candidates','company_id', 'user_id');
-    }
-
-
-
-    public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => 'name'
-            ]
-        ];
     }
 
     public function attendances(){
@@ -102,10 +123,6 @@ class Company extends Model
     }
 
     //company users
-
-
-
-
 
     public function govLeaves(){
         return $this->hasMany(CompanyGovernmentleave::class, 'company_id');
